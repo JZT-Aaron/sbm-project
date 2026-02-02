@@ -1,0 +1,42 @@
+# --- JAVA / MAVEN ---
+**/target/
+**/*.jar
+.mtj.tmp/
+
+# --- NODE / NESTJS / REACT ---
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.nyc_output/
+
+# --- LOGS ---
+*.log
+**/logs/
+npm-debug.log*
+yarn-debug.log*
+
+# --- IDE & EDITORS ---
+**/test/
+.prettierrc
+.idea/
+.project
+.classpath
+*.sublime-workspace
+.settings/
+# Wir behalten deine VS-Code Konfigurationen bei, falls du sie brauchst:
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# --- ENVIRONMENT & SECRETS ---
+.env
+.env.*
+!.env.example
+
+.wakatime-project
+
+
+# --- SYSTEM ---
+.DS_Store
+Thumbs.db

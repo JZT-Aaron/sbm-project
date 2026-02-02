@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{ "name": "BACKEND (NestJS)", "path": "backend-nestjs" },
+		{ "name": "FRONTEND (React)", "path": "frontend-react" },
+		{ "name": "PLUGIN (Java)", "path": "minecraft-plugin" }
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive",
+		"java.compile.nullAnalysis.mode": "automatic",
+	}
+}

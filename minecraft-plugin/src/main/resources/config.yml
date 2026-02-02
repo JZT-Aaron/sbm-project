@@ -1,0 +1,10 @@
+permission:
+    sbm:
+      command:
+        info: sbm.command.info
+        game: sbm.command.game
+        team: sbm.command.team
+      allow:
+        break-blocks: sbm.allow.break-blocks
+        interact: sbm.allow.interact
+        behold-gamemode: sbm.allow.behold-gamemode
