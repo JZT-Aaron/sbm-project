@@ -15,6 +15,8 @@ public class TeamTab implements TabCompleter {
         if(args.length == 1) {
             List<String> tab = new ArrayList<>();
             tab.add("add");
+            tab.add("add-all");
+            tab.add("remove-all");
             tab.add("remove");
             tab.add("clear");
             return tab;
