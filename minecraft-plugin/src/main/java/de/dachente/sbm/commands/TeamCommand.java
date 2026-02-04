@@ -66,6 +66,14 @@ public class TeamCommand implements CommandExecutor {
             return true;
         }
 
+        if(args[0].equalsIgnoreCase("add-all")) {
+            for(Player all : Main.arena.getPlayers()) Game.addPlayerTeam(all.getUniqueId().toString());;
+        }
+
+        if(args[0].equalsIgnoreCase("remove-all")) {
+            for(Player all : Main.arena.getPlayers()) Game.removePlayerTeam(all.getUniqueId().toString());;
+        }
+
         if(args[0].equalsIgnoreCase("clear")) {
             if(Game.getTeamPlayers(team).size() <= 0) {
                 sendReply.accept("§c§oDas §7Team §oist bereits §cleer§o!");
