@@ -51,6 +51,7 @@ public final class Main extends JavaPlugin {
         registerCommands();
         registerEvents();
         registerCameras();
+        registerTeamGates();
 
         getLogger().info("Plugin is started.");
     }
@@ -107,6 +108,7 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new InventoryClickListener(), this);
         pluginManager.registerEvents(new MoveListener(), this);
         pluginManager.registerEvents(new ItemDropListener(), this);
+        pluginManager.registerEvents(new BlockRedstoneHandler(), this);
 
         pluginManager.registerEvents(new PlayerToggleSnakeListener(), this);
 
@@ -117,6 +119,71 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new JoinListener(), this);
         pluginManager.registerEvents(new QuitListener(), this);
     }
+
+    private void registerTeamGates() {
+        List<Location> bluePressurePlates = new ArrayList<>();
+        List<Location> redPressurePlates = new ArrayList<>();
+        Map<Location, List<Location>> barriersPerGate = new HashMap<>();
+        
+        ConfigurationSection plateSection = getConfig().getConfigurationSection("gates-pos.plates");
+        ConfigurationSection barrierSection = getConfig().getConfigurationSection("gates-pos.barriers");
+        
+        for(String key : plateSection.getKeys(false)) {
+            List<Location> plateLocations = parseList(plateSection.getString(key));
+            List<Location> barrierLocations = parseList(barrierSection.getString(key));
+
+            List<Location> mirrorBarrierLocations = barrierLocations.stream().map(this::getMirrorLocation).toList();
+
+            for(Location plateLocation : plateLocations) {
+                Location redPlate = getMirrorLocation(plateLocation);
+                barriersPerGate.put(redPlate, mirrorBarrierLocations);
+                barriersPerGate.put(plateLocation, barrierLocations);
+                bluePressurePlates.add(plateLocation);
+                redPressurePlates.add(redPlate);
+            }
+
+        }
+
+        GateManager.setBluePressurePlates(bluePressurePlates, redPressurePlates);
+        GateManager.setBarrierPerGate(barriersPerGate);
+    }
+
+    private Location getMirrorLocation(Location loc) {
+        Location mirror = loc.clone();
+        mirror.setZ(mirror.getZ()*-1);
+        return mirror;
+    }
+
+    private List<Location> parseList(String string) {
+        List<Location> locations = new ArrayList<>();
+        String[] locs = string.split(";");
+        for(String loc : locs) {
+            Double[] cords = Arrays.stream(loc.split(","))
+                .map(Double::valueOf)
+                .toArray(Double[]::new);
+            Location l = new Location(arena, cords[0], cords[1], cords[2]);
+            locations.add(l);
+        }
+        return locations;
+    }
+
+    private void loadLang() {
+        for(Language lang : Language.values()) {
+            lang.setFile(getLangFile(lang.getFileName()));
+        }
+    }
+
+    private FileConfiguration getLangFile(String lang) {    
+        String path = "lang/lang_" + lang + ".yml";
+        File file = new File(getDataFolder(), path);
+        
+        if(!file.exists()) {
+            saveResource(path, false);
+        }
+
+        return YamlConfiguration.loadConfiguration(file);
+    }
+
 
     private void registerCameras() {
         ArmorStand cameraUp = (ArmorStand) arena.spawnEntity(new Location(arena, 0, 22, 0, 180, 90), EntityType.ARMOR_STAND);

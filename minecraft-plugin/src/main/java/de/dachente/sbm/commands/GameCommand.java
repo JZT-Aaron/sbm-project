@@ -66,7 +66,7 @@ public class GameCommand implements CommandExecutor {
                 sendReply.accept("§c§oDieses Team gibt es nicht!");
                 return true;
             }
-            Game.setOpenGate(team, openState);
+            GateManager.setGateActive(openState);
         }
 
         if(args[0].equalsIgnoreCase("close")) {

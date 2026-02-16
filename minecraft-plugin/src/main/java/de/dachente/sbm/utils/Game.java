@@ -92,9 +92,7 @@ public class Game {
             @Override
             public void run() {
                     if(timer <= 0) {
-                        for(Team team : Team.values()) {
-                            setOpenGate(team, true);
-                        }
+                        GateManager.setGateActive(true);
                         for(Player all : Bukkit.getOnlinePlayers()) {
                             all.playSound(all.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 5, 1);
                             showTitle("§7Tore offen! ", "Verteilt euch", all);
@@ -123,9 +121,6 @@ public class Game {
                 if(timer <= 0) {
                     sendImportantInfo("§c§oEs geht los!");
                     Bukkit.getScheduler().cancelTask(taskID);
-                    for(Team team : Team.values()) {
-                        setOpenGate(team, false);
-                    }
                     for(Player all : Bukkit.getOnlinePlayers()) {
                         showTitle("§7Start!", "§7Das Feuer ist eröffnet!", all);
                         all.playSound(all.getLocation(), Sound.EVENT_RAID_HORN, 10, 1);
