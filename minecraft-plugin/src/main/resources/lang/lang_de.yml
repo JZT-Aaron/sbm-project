@@ -1,0 +1,100 @@
+error:
+  no-permission: "§cDies ist dir nicht gestattet!"
+  currently-no-permission: "§cDas kannst du jetzt nicht tun!"
+  syntax-error: "§cBitte benutze §o%syntax%"
+  player-not-found: "§cDen Spieler §o%player% gibt es nicht auf dem Server."
+  still-closed: "Die %instance% ist noch nicht offen!"
+  join-end: "Du kannst nicht mehr teilnehmen."
+  game:
+    game-already: "§cDas Spiel ist schon %game-state%!"
+    round-already: "§cDie Runde ist bereits %game-state%!"
+  timer:
+    wrong-format: "Bitte nutze dieses Format: %format%!"
+  team:
+    not-found: "Dieses Team gibt es nicht!"
+    player-not-found: "Der Spieler %player% ist in keinem Team!"
+
+state:
+  open: "offen"
+  close: "geschlossen"
+  started: "gestartet"
+  stopped: "gestoppt"
+  loading: "Laden..."
+
+instances:
+  game-server: "Game-Server"
+  lobby: "Lobby"
+  game: "Spiel"
+  round: "Runde"
+  server: "Server"
+
+info:
+  sneak-to-leave: "Sneake, um zu verlassen."
+  game-server-open: "Der Spiel-Server hat jetzt geöffnet! Ihr könnt über das Menü oder mit /game-server beitreten."
+  gate-open: "Tore offen!"
+  gate-open-subtitle: "Verteilt euch!"
+  get-ready: "Macht euch bereit"
+  timer:
+    timer-set: "Der Timer wurde auf den %date% §oum %time% Uhr §ogesetzt."
+    timer-change: "Der Start wurde auf den %date% §oum %time% §overschoben."
+    game-start-countdown: "Das Spiel startet in %time%"
+    gate-open-countdown: "Tore öffnen in: "
+    spread-timer-start: "§c§oDas Spiel startet! §7§oIhr habt %time% Sek, um euch auf dem Spielfeld zu verteilen!"
+    game-start: "Es geht los!"
+    game-start-subtitle: "Das Feuer ist eröffnet!"
+  game:
+    game-hard-reset: "§cHard-Reset wurde durchgeführt."
+    player-kill: "Der Spieler %player% §owurde getötet."
+  alert:
+    whispering: "Du flüsterst zu %target% §7%message%"
+  event:
+    player-hit: "Der Spieler %target% wurde von %damager% getroffen."
+    player-died: "Der Spieler %target% wurde durch %killer% getötet."
+    player-join: "§a✓ §7Der Spieler %player% hat den Server betreten!"
+    player-left: "§c✗ §7Der Spieler %player% hat den Server verlassen!"
+    team-splitting: "Das Team wird nun aufgeteilt."
+    team-won: "Das Team %team% kommt weiter."
+    player-won: "Der Spieler §6%player% hat die Schneeballschlacht gewonnen!"
+    player-won-title: "§6§l§n%player% §6§ohat gewonnen."
+    game-change-draw: "Das Spielfeld wird wegen eines Unentschiedens geändert."
+  team:
+    team-join: "Du bist jetzt in %team%."
+    team-leave: "Du bist jetzt nicht mehr in %team%."
+    team-red: "Team Rot"
+    team-blue: "Team Blau"
+
+items:
+  leave-team:
+    name: "Team verlassen"
+    description: "Betätige, um dein Team zu verlassen."
+  join-team:
+    name: "Teilnehmen"
+    description: "Betätige, um am Wettkampf teilzunehmen."
+  camera-views: 
+    name: "Kamera-Aussichten"
+    description: "Betätige, um die Auswahl der verschiedenen Kamera-Aussichten zu öffnen."
+  back-to-lobby: 
+    name: "Lobby"
+    description: "Betätige, um zurück in die Lobby zu gelangen."
+  parkour:
+    name: "Parkour"
+    description: "Betätige, um dich zum Startpunkt des Parkours zu teleportieren."
+  join-game-server:
+    name: "Game-Server"
+    description: "Betätige, um dem Game-Server beizutreten."
+  closed-game-server-starting:
+    name: "Öffnung: %time%"
+    description: "Lies ab, wann der Game-Server öffnet."
+  closed-game-server:
+    name: "Öffnung: %time%"
+    description: "Die Öffnung ist noch nicht festgelegt."
+  camera-view-menu: "Kamera-Aussichten"
+  camera-up:
+    name: "Kamera oben"
+    description: "Blick von oben auf das Spielfeld."
+  camera-red:
+    name: "Kamera Seite-Rot"
+    description: "Blick auf die rote Seite des Spielfelds."
+  camera-blue:
+    name: "Kamera Seite-Blau"
+    description: "Blick auf die blaue Seite des Spielfelds."

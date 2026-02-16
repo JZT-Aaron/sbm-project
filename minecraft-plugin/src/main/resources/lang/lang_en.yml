@@ -1,0 +1,100 @@
+error:
+  no-permission: "§cYou are not allowed to do this!"
+  currently-no-permission: "§cYou cannot do this right now!"
+  syntax-error: "§cPlease use §o%syntax%"
+  player-not-found: "§cThe player §o%player% was not found on the server."
+  still-closed: "The %instance% is not open yet!"
+  join-end: "You can no longer participate."
+  game:
+    game-already: "§cThe game is already %game-state%!"
+    round-already: "§cThe round is already %game-state%!"
+  timer:
+    wrong-format: "Please use this format: %format%!"
+  team:
+    not-found: "This team does not exist!"
+    player-not-found: "Player %player% is not in a team!"
+
+state:
+  open: "open"
+  close: "closed"
+  started: "started"
+  stopped: "stopped"
+  loading: "loading..."
+
+instances:
+  game-server: "game server"
+  lobby: "lobby"
+  game: "game"
+  round: "round"
+  server: "server"
+
+info:
+  sneak-to-leave: "Sneak to leave."
+  game-server-open: "The game server is now open! You can join via the menu or with /game-server."
+  gate-open: "Gates open!"
+  gate-open-subtitle: "Spread out!"
+  get-ready: "Get ready"
+  timer:
+    timer-set: "The timer has been set to %date% §oat %time%§o."
+    timer-change: "The start has been rescheduled to %date% §oat %time%§o."
+    game-start-countdown: "The game starts in %time%"
+    gate-open-countdown: "Gates opening in: "
+    spread-timer-start: "§c§oThe game is starting! §7§oYou have %time% sec to spread out on the field!"
+    game-start: "Go!"
+    game-start-subtitle: "Fire at will!"
+  game:
+    game-hard-reset: "§cHard reset has been performed."
+    player-kill: "Player %player% §owas killed."
+  alert:
+    whispering: "You whisper to %target%: §7%message%"
+  event:
+    player-hit: "Player %target% was hit by %damager%."
+    player-died: "Player %target% was killed by %killer%."
+    player-join: "§a✓ §7%player% joined the server!"
+    player-left: "§c✗ §7%player% left the server!"
+    team-splitting: "Teams are being split now."
+    team-won: "Team %team% advances to the next round."
+    player-won: "Player §6%player% has won the snowball fight!"
+    player-won-title: "§6§l§n%player% §6§ohat won!"
+    game-change-draw: "The arena is being changed due to a draw."
+  team:
+    team-join: "You are now in team %team%."
+    team-leave: "You have left team %team%."
+    team-red: "Team Red"
+    team-blue: "Team Blue"
+
+items:
+  leave-team:
+    name: "Leave Team"
+    description: "Click to leave your team."
+  join-team:
+    name: "Participate"
+    description: "Click to participate in the competition."
+  camera-views: 
+    name: "Camera Views"
+    description: "Click to open the camera view selection."
+  back-to-lobby: 
+    name: "Lobby"
+    description: "Click to return to the lobby."
+  parkour:
+    name: "Parkour"
+    description: "Click to teleport to the parkour starting point."
+  join-game-server:
+    name: "Game Server"
+    description: "Click to join the game server."
+  closed-game-server-starting:
+    name: "Opening: %time%"
+    description: "Check when the game server opens."
+  closed-game-server:
+    name: "Opening: %time%"
+    description: "The opening time has not been set yet."
+  camera-view-menu: "Camera Views"
+  camera-up:
+    name: "Camera Top"
+    description: "View the field from above."
+  camera-red:
+    name: "Camera Side-Red"
+    description: "View the red side of the field."
+  camera-blue:
+    name: "Camera Side-Blue"
+    description: "View the blue side of the field."
