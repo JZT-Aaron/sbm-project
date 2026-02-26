@@ -24,7 +24,7 @@ public class StartClock {
 
     static FileConfiguration config = Main.getPlugin().getConfig();
     static final String NAME = "Event Server";
-    public static boolean isStarted = false;
+    public static boolean isRoundGoing = false;
 
     public static final String NO_DATE_AVAILABLE = "§7§oN/A";
     private final static String SIGN_LINE = "§f§l--------------";
@@ -40,12 +40,12 @@ public class StartClock {
                 Main.lobby.getBlockAt(-13, 0, 2)));
 
     public static void stop() {
-        isStarted = false;
+        isRoundGoing = false;
         Bukkit.getScheduler().cancelTask(taskID);
     }
 
     public static void start() {
-        isStarted = true;
+        isRoundGoing = true;
 
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             @Override

@@ -1,10 +1,10 @@
 package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.Team;
-import net.kyori.adventure.text.Component;
 
 import java.util.function.Consumer;
 
@@ -54,9 +54,9 @@ public class GameCommand implements CommandExecutor {
             boolean openState;
             if(args[1].equalsIgnoreCase("open") | args[1].equalsIgnoreCase("close")) openState = args[1].equalsIgnoreCase("open") ? true : false; 
             else {
-                    sendReply.accept("Bitte benutze §7open/close §ofür den zustand der Tore.");
-                    return true;
-                }
+                sendReply.accept("Bitte benutze §7open/close §ofür den zustand der Tore.");
+                return true;
+            }    
             if(team == null) GateManager.setGateActive(openState);
             else GateManager.setGateActive(openState, team);
         }
@@ -69,22 +69,33 @@ public class GameCommand implements CommandExecutor {
             Game.close();
         }
 
-        if(args[0].equalsIgnoreCase("start")) {
-            if(Game.isStarted) {
-                sendReply.accept("§cDas Spiel läuft schon!");
-                return true;
+        if(args[0].equalsIgnoreCase("round")) {
+            if(args.length < 2) {
+                sendReply.accept("§cBitte benutze round start [now]");
             }
-            sendReply.accept("Das Spiel wird gestartet.");
-            Game.startTimer();
+            if(args[1].equalsIgnoreCase("start")) {
+                if(Game.isRoundGoing) {
+                    sendReply.accept("§cDie Runde läuft schon!");
+                    return true;
+                }   
+                if(args.length == 3 && args[2].equalsIgnoreCase("now")) {
+                    Game.beginRound();
+                    return true;
+                }
+                Game.startTimer();
+                sendReply.accept("Die Runde wird gestartet.");
+            }
+            
         }
 
-        if(args[0].equalsIgnoreCase("stop")) {
-            if(!Game.isStarted) {
+        // When production add confirm
+        if(args[0].equalsIgnoreCase("hard-reset")) {
+            if(!Game.isRoundGoing) {
                 sendReply.accept("§cDas Spiel läuft nicht!");
                 return true;
             }
             sendReply.accept("Das Spiel wird gestoppt.");
-            Game.stop();
+            Game.hardReset();
         }
 
         if(args[0].equalsIgnoreCase("dead") && args.length == 2) {
@@ -99,18 +110,6 @@ public class GameCommand implements CommandExecutor {
             }
             Game.deadMode(target);
             sendReply.accept("Der Spieler §7" + Main.toPlain(target.displayName()) + " ist jetzt tod.");
-        }
-
-        if(args[0].equalsIgnoreCase("next") && args.length == 2) {
-            Team wonTeam = Team.getTeamById(args[1]);
-            if(wonTeam == null) {
-                sendReply.accept("Dieses Team exsistiert nicht!");
-            }
-            Game.nextRound(wonTeam);
-        }
-
-        if(args[0].equalsIgnoreCase("re-match")) {
-            Game.startReMatch();
         }
 
         if(args[0].equalsIgnoreCase("bonus-snowball") && args.length == 2) {
@@ -175,20 +174,11 @@ public class GameCommand implements CommandExecutor {
                         break;
                     }
                     if(!args[4].matches("\\d{1,2}:\\d{1,2}:\\d{1,2}")) {
-                        Bukkit.broadcast(Component.text("Debug check herer"));
                         sendReplyTimer.accept("§cBitte nutzte dieses Format: §ohh:mm:ss§c!");
                         break;
                     }
                     String[] args2 = args[3].split("/");
                     String[] args3 = args[4].split(":");
-                    if(args2.length == 4) {
-                        sendReplyTimer.accept("§cBitte nutzte dieses Format: §oyyyy/MM/dd§c!");
-                        return true;
-                    }
-                    if(args3.length == 4) {
-                        sendReplyTimer.accept("§cBitte nutzte dieses Format: §ohh:mm:ss§c!");
-                        return true;
-                    }
                     int y = Integer.parseInt(args2[0]);
                     int M = Integer.parseInt(args2[1]);
                     int d = Integer.parseInt(args2[2]);

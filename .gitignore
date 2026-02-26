@@ -1,4 +1,5 @@
 # --- JAVA / MAVEN ---
+*/bot-test/
 **/target/
 **/*.jar
 .mtj.tmp/

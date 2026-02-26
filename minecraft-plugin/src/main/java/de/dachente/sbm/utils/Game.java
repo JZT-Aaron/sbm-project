@@ -1,14 +1,14 @@
 package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.GateManager;
+import de.dachente.sbm.utils.enums.Server;
+import de.dachente.sbm.utils.enums.Status;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 
 
 import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.data.type.Gate;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
@@ -27,6 +27,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Game {
 
@@ -35,7 +36,7 @@ public class Game {
     static int taskID2;
 
     public static boolean isSnowing = true;
-    public static boolean isStarted = false;
+    public static boolean isRoundGoing = false;
     public static boolean isReMatch = false;
     public static boolean isJoiningOpen = true;
     private static Map<String, Team> teamsPlayerUUIDs = new HashMap<>();
@@ -45,14 +46,33 @@ public class Game {
     public static List<ArmorStand> cameraPoints = new ArrayList<>();
     public static BossBar bossBar = Bukkit.createBossBar("§7§lLaden ...", BarColor.WHITE, BarStyle.SOLID);
 
+    public static int blueHearts = 0;
+    public static int redHearts = 0;
+
     public static void setSnowing(boolean snowing) {
         isSnowing = snowing;
     }
 
     public static void loadLobbyInv(Player player) {
+        Main.setPlayerStatus(Status.WAITING, player);
+
         ItemStack leaveTeam = new ItemBuilder(Material.RED_BED).setDisplayName("§7§lTeam verlassen").setTagData("leave-team")
                 .setLore("§7Betätige um dein Team zu verlassen").build();
         player.getInventory().setItem(8, leaveTeam);
+    }
+
+    public static void setViewer(Player player) {
+        player.teleport(Main.arena.getSpawnLocation());
+        player.getInventory().clear();
+        if(getTeamsPlayer().containsKey(player.getUniqueId().toString())) setTeamChestPlate(player);
+        else Main.setPlayerStatus(Status.WATCHING, player);
+        player.setHealthScale(20);
+        player.setHealth(20);
+        player.setFoodLevel(20);
+        player.setExp(0);
+        player.setLevel(0);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 255,false, false, false));
+        setGameServerHotbar(player);
     }
 
     public static void open() {
@@ -79,10 +99,6 @@ public class Game {
     }
 
     public static void startTimer() {
-        List<Block> gates = new ArrayList<>();
-        gates.addAll(getGates(Team.BLUE));
-        gates.addAll(getGates(Team.RED));
-
         sendImportantInfo("§c§oDas Spiel startet in 5 sek!");
         for(Player all : Bukkit.getOnlinePlayers()) {
             showTitle("§7Tore öffnen in: ", all);
@@ -106,11 +122,10 @@ public class Game {
                         }   
                         sendInfo(timer + "");
                     }
-                    timer -= 1;
+                    timer--;
                 }
         }, 0, 20);
     }
-
 
     public static void startSpreadTimer() {
         sendImportantInfo("§c§oDas Spiel startet! §7§oIhr hab 10 sek um euch auf dem Spielfeld zu verteilen!");
@@ -125,8 +140,8 @@ public class Game {
                         showTitle("§7Start!", "§7Das Feuer ist eröffnet!", all);
                         all.playSound(all.getLocation(), Sound.EVENT_RAID_HORN, 10, 1);
                     }
-                    isStarted = true;
-                    start();
+                    isRoundGoing = true;
+                    beginRound();
                     
                 } 
                 else if(timer <= 10) {
@@ -137,17 +152,16 @@ public class Game {
                     }
                     if(timer <= 4) sendInfo(timer + "");
                 }
-                timer -= 1;
+                timer--;
             }
         }, 0, 20);
     }
     
-
-    public static void start() {
-        isJoiningOpen = false;
+    public static void beginRound() {
         startGameTimer(1);
         for(Map.Entry<String, Team> map : teamsPlayerUUIDs.entrySet()) {
             Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
+            Main.setPlayerStatus(Status.PLAYING, player);
             if(player == null) return;
             if(map.getValue() == Team.BLUE) {
                 livingPlayersTeamBlue.add(player.getUniqueId().toString());
@@ -162,61 +176,41 @@ public class Game {
             player.setHealthScale(6);
         }
 
-        //TODO: Fix flaw here
+        // Hearts Compensation
         int teamRedSize = Game.getTeamPlayers(Team.RED).size();
         int teamBlueSize = Game.getTeamPlayers(Team.BLUE).size();
-        if(teamBlueSize < teamRedSize && teamBlueSize != 0) {
-            for(int i = 0; i < (teamRedSize-teamBlueSize); i++) {
-                int random = new Random().nextInt(teamBlueSize-1);
-                random +=1;
-                Player player = Bukkit.getPlayer(UUID.fromString(Game.getTeamPlayers(Team.BLUE).get(random)));
-                if(player == null) {
-                    i -= 1;
-                    continue;
-                }
-                player.setHealthScale(player.getHealthScale()+3);
-            }
-        }
-        if(teamRedSize < teamBlueSize && teamRedSize != 0) {
-            for(int i = 0; i < (teamBlueSize-teamRedSize); i++) {
-                int random = new Random().nextInt(teamBlueSize-1);
-                random +=1;
-                Player player = Bukkit.getPlayer(UUID.fromString(Game.getTeamPlayers(Team.RED).get(random)));
-                if(player == null) {
-                    i -= 1;
-                    continue;
-                }
-                player.setHealthScale(player.getHealthScale()+3);
-            }
-        }
-    }
+        
+        int teamSizeDiffence = teamBlueSize - teamRedSize;
+        if(teamSizeDiffence != 0) {
+            Team derpivedTeam = teamSizeDiffence < 0 ? Team.BLUE : Team.RED;
+            
+            List<Player> availableCompensationPlayers = getTeamPlayers(derpivedTeam).stream()
+                .map(uuid -> Bukkit.getPlayer(UUID.fromString(uuid)))
+                .collect(Collectors.toList());
 
-    public static void stop() {
-        livingPlayersTeamBlue.clear();
-        livingPlayersTeamRed.clear();
-        bossBar.removeAll();
-        leftTeamPlayers.clear();
-        Bukkit.getScheduler().cancelTask(taskID2);
-        for(Entity entity : Main.arena.getEntities()) {
-            //TODO: Check ob das da passt
-            if(!entity.getType().equals(EntityType.ITEM) ||
-                    !(entity.getLocation().distance(new Location(Main.arena, 0.5, 0, 0)) <= 20)) continue;
-            entity.remove();
+            teamSizeDiffence = Math.abs(teamSizeDiffence);
+            
+            while (teamSizeDiffence > 0) {
+            List<Player> compensationPlayersPool = availableCompensationPlayers;
+                while(!compensationPlayersPool.isEmpty() && teamSizeDiffence > 0) {
+                    Random random = new Random();
+                    int bound = compensationPlayersPool.size()-1;
+                    int playerIndex = bound <= 0 ? 0 : random.nextInt(bound);
+                    
+                    Player compensationPlayer = compensationPlayersPool.get(playerIndex);
+                    compensationPlayersPool.remove(playerIndex);
+                    compensationPlayer.setHealthScale(compensationPlayer.getHealthScale()+(3*2));
+                    
+                    teamSizeDiffence--;
+                } 
+            }
         }
-        for(Map.Entry<String, Team> teamPlayer : Game.getTeamsPlayer().entrySet()) {
-            Player player = Bukkit.getPlayer(UUID.fromString(teamPlayer.getKey()));
-            player.getInventory().clear();
-            player.setHealthScale(20);
-            player.setHealth(20);
-            player.setFoodLevel(20);
-            player.setExp(0);
-            player.setLevel(0);
-        }
-        isStarted = false;
+        Game.updateTeamHearts();
+        isRoundGoing = true;
     }
 
     public static void nextRound(Team wonTeam) {
-        Game.sendImportantInfo("Das Team " + wonTeam.getChatColor() + wonTeam.getName() + " §7§okommt weiter.");
+        // Splitting Teams
         Game.sendInfo("Das Team wird nun aufgeteilt.");
         for(Map.Entry<String, Team> map : getTeamsPlayer().entrySet()) {
             if(map.getValue() == wonTeam) {
@@ -225,14 +219,61 @@ public class Game {
                 loadLobbyInv(player);
                 continue;
             }
-            removePlayerTeam(map.getKey());
+            
         }
+        clearTeam(getOppositeTeam(wonTeam));
         for(int i = 0; i < getTeamPlayers(wonTeam).size()/2; i++) {
             int playerId = new Random().nextInt(getTeamPlayers(wonTeam).size()-1);
             String uuid = getTeamPlayers(wonTeam).get(playerId+1);
             removePlayerTeam(uuid);
             addPlayerTeam(uuid, getOppositeTeam(wonTeam));
         }
+    }
+
+    public static void endRound() {
+        isRoundGoing = false;
+
+        // Recount Hearts
+        updateTeamHearts();
+        int blueHeats = getTeamHearts(Team.BLUE);
+        int redHeats = getTeamHearts(Team.RED);
+
+        resetRound();
+
+        // Determine Games Outcome
+        if(redHeats == blueHeats) {
+            sendInfo("[DEBUG] End Round Determined: REMATCH");
+        } 
+        else {
+            Team winningTeam = (blueHeats > redHeats) ? Team.BLUE : Team.RED;
+            if(getTeamPlayers(winningTeam).size() <= 1) {
+                winner(Bukkit.getPlayer(UUID.fromString(getTeamPlayers(winningTeam).get(0))));
+            } else {
+                sendImportantInfo("Das Team " + winningTeam.getChatColor() + winningTeam.getName() + " §7§okommt weiter.");
+                nextRound(winningTeam);
+            } 
+        }
+    }
+
+    public static void resetRound() {
+        Bukkit.getScheduler().cancelTask(taskID);
+        Bukkit.getScheduler().cancelTask(taskID2);
+        Game.bossBar.setVisible(false);
+        bossBar.removeAll();
+        GateManager.setGateActive(false);
+        livingPlayersTeamBlue.clear();
+        livingPlayersTeamRed.clear();
+        for(Entity entity : Main.arena.getEntities()) {
+            if(!entity.getType().equals(EntityType.ITEM) ||
+                    !(entity.getLocation().distance(new Location(Main.arena, 0.5, 0, 0)) <= 20)) continue;
+            entity.remove();
+        }
+    }
+    
+    public static void hardReset() {
+        resetRound();
+        isRoundGoing = false;
+        for(Team team : Team.values()) clearTeam(team);
     }
 
     public static void winner(Player player) {
@@ -260,38 +301,8 @@ public class Game {
                 timer--;
                 bossBar.setTitle("§7§l" + decodeSekToMinSek(timer));
                 if(timer <= 0) {
-                    double blueHeats = 0;
-                    double redHeats = 0;
-                    for(String uuid : livingPlayersTeamRed) {
-                        Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-                        redHeats += player.getHealthScale();
-                    }
-                    for(String uuid : livingPlayersTeamBlue) {
-                        Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-                        blueHeats += player.getHealthScale();
-                    }
-                    if(redHeats == blueHeats) {
-                        startReMatch();
-                    }
-                    if(blueHeats > redHeats) {
-                        stop();
-                        if(Game.getTeamsPlayer().size() <= 2) {
-                            winner(Bukkit.getPlayer(UUID.fromString(getTeamPlayers(Team.BLUE).get(0))));
-                            Bukkit.getScheduler().cancelTask(taskID2);
-                            return;
-                        }
-                        nextRound(Team.BLUE);
-                    }
-                    if(redHeats > blueHeats) {
-                        stop();
-                        if(Game.getTeamsPlayer().size() <= 2) {
-                            winner(Bukkit.getPlayer(UUID.fromString(getTeamPlayers(Team.RED).get(0))));
-                            Bukkit.getScheduler().cancelTask(taskID2);
-                            return;
-                        }
-                        nextRound(Team.RED);
-                    }
                     Bukkit.getScheduler().cancelTask(taskID2);
+                    endRound();
                 }
             }
         }, 0, 20);
@@ -344,7 +355,6 @@ public class Game {
     public static void showTitle(String title, String subtitle, Player player) {
         showTitle(title, subtitle, TitleTime.NORMAL, player);
     }
-
 
     //Change Here Server Message send Format
     public static String getServerMessageFormat(String message, String senderName) {
@@ -400,8 +410,24 @@ public class Game {
         player.getInventory().clear();
         //Location teamSpawnLocation = null;
 
-        ItemStack teamChestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
+        teamsPlayerUUIDs.put(uuid, team);
+
+        player.teleport(team.getTeamSpawnLocation());
+
         loadLobbyInv(player);
+        player.updateInventory();
+
+        setTeamChestPlate(team, player);
+        sendInfo("§oDu bist jetzt in " + team.getChatColor() + team.getName() + "§7.", "Info", Bukkit.getPlayer(UUID.fromString(uuid)));
+    }
+
+    public static void setTeamChestPlate(Player player) {
+        Team team = getTeamsPlayer().get(player.getUniqueId().toString());
+        setTeamChestPlate(team, player);
+    }
+
+    public static void setTeamChestPlate(Team team, Player player) {
+        ItemStack teamChestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
         LeatherArmorMeta teamChestplateMeta = (LeatherArmorMeta) teamChestplate.getItemMeta();
         teamChestplateMeta.setColor(team.getColor());
         teamChestplateMeta.getPersistentDataContainer().set(Main.NO_MOVE, PersistentDataType.BYTE, (byte) 1);
@@ -409,33 +435,23 @@ public class Game {
         teamChestplateMeta.addItemFlags(ItemFlag.HIDE_DYE);
         teamChestplate.setItemMeta(teamChestplateMeta);
         player.getInventory().setChestplate(teamChestplate);
-
-        player.playerListName(Component.text(team.getChatColor() + Main.toPlain(player.displayName())));
-        player.teleport(team.getTeamSpawnLocation());
-        player.updateInventory();
-
-        teamsPlayerUUIDs.put(uuid, team);
-        sendInfo("§oDu bist jetzt in " + team.getChatColor() + team.getName() + "§7.", "Info", Bukkit.getPlayer(UUID.fromString(uuid)));
     }
 
     public static void removePlayerTeam(String uuid) {
         Team team = teamsPlayerUUIDs.get(uuid);
+        if(team == null) return;
 
         Player player = Bukkit.getPlayer(UUID.fromString(uuid));
 
-        player.teleport(Main.arena.getSpawnLocation());
-        player.playerListName(Component.text(player.getName()));
-        player.getInventory().setChestplate(new ItemStack(Material.AIR));
-        player.getInventory().clear();
-        player.setHealthScale(20);
-        player.setHealth(20);
-        player.setFoodLevel(20);
-        player.setExp(0);
-        player.setLevel(0);
-        setGameServerHotbar(player);
-
         teamsPlayerUUIDs.remove(uuid);
+
+        setViewer(player);    
         sendInfo("§oDu bist jetzt nicht mehr " + team.getChatColor() + team.getName() + "§7.", Bukkit.getPlayer(UUID.fromString(uuid)));
+    }
+
+    public static void setServerHotbar(Server server, Player player) {
+        if(server == Server.EVENT_SERVER) setGameServerHotbar(player);
+        if(server == Server.LOBBY) setLobbyHotbar(player);
     }
 
     public static void setGameServerHotbar(Player player) {
@@ -467,7 +483,7 @@ public class Game {
                     .setDisplayName("§7§lGame-Server §7§o(klick)")
                     .setTagData("join-game-server")
                     .setLore("§7Betätige um dem Game-Server beizutreten.");
-        } else if(StartClock.isStarted) joinGameServerBuilder = joinGameServerBuilder.setLore("§7Lies ab wann der Game-Server öffnet");
+        } else if(StartClock.isRoundGoing) joinGameServerBuilder = joinGameServerBuilder.setLore("§7Lies ab wann der Game-Server öffnet");
             else joinGameServerBuilder = joinGameServerBuilder.setLore("§7Die Öffnung ist nicht festgelegt.");
 
         ItemStack joinGameServer = joinGameServerBuilder.build();
@@ -478,48 +494,16 @@ public class Game {
     }
 
     public static void deadMode(Player player) {
+        Main.setPlayerStatus(Status.DEAD, player);
+
         Team team = getTeamsPlayer().get(player.getUniqueId().toString());
-        player.teleport(Main.arena.getSpawnLocation());
-        if(team == Team.BLUE) {
-            livingPlayersTeamBlue.remove(player.getUniqueId().toString());
-        }
-        if(team == Team.RED) {
-            livingPlayersTeamRed.remove(player.getUniqueId().toString());
-        }
-        player.getInventory().clear();
-        player.setHealthScale(20);
-        player.setHealth(20);
-        player.setFoodLevel(20);
-        player.setExp(0);
-        player.setLevel(0);
-        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 30, 255,false, false, false));
-        Game.setGameServerHotbar(player);
-        if(Game.getLivingPlayers(team).size() <= 0) {
-            if(Game.getTeamsPlayer().size() <= 2) {
-                if(isReMatch) {
-                    Game.isReMatch = false;
-                    for(Player all : Main.arena.getPlayers()) {
-                        Location playerLocation = all.getLocation();
-                        all.teleport(new Location(Main.arena, playerLocation.getX(), playerLocation.getY(), playerLocation.getZ()+85.5, playerLocation.getYaw(), playerLocation.getPitch()));
-                    }
-                }
-                if(Game.getLivingPlayers(Game.getOppositeTeam(team)).size() < 1) {
-                    Game.sendImportantInfo("Kein Gewinner konnte erkannt werden.");
-                    Game.stop();
-                    return;
-                }
-                Player winner = Bukkit.getPlayer(UUID.fromString(Game.getLivingPlayers(Game.getOppositeTeam(team)).get(0)));
-                if(winner == null) {
-                    Game.sendImportantInfo("Kein Gewinner (Spieler) konnte erkannt werden!");
-                    Game.stop();
-                    return;
-                }
-                Game.stop();
-                Game.winner(winner);
-                return;
-            }
-            Game.nextRound(Game.getOppositeTeam(team));
-        }
+        getLivingPlayers(team).remove(player.getUniqueId().toString());
+        
+        updateTeamHearts();
+
+        setViewer(player);
+        
+        if(Game.getLivingPlayers(team).size() <= 0) endRound();
     }
 
     public static void openCameraViews(Player player) {
@@ -534,63 +518,41 @@ public class Game {
         player.openInventory(inv);
     }
 
-    public static Map<String, Team> getTeamsPlayer() {
-        return teamsPlayerUUIDs;
+    public static boolean isInTeam(Player player) {
+       return Game.getTeamsPlayer().containsKey(player.getUniqueId().toString());
+    }
+
+    public static Team getTeam(Player player) {
+        return Game.getTeamsPlayer().get(player.getUniqueId().toString());
     }
 
     public static boolean isOpen() { return config.getBoolean("game.open"); }
 
-    public static List<Block> getGates(Team team) {
-        List<Block> gates = new ArrayList<>();
-        if(team == Team.BLUE) {
-            gates.add(Main.arena.getBlockAt(1, 0, 17));
-            gates.add(Main.arena.getBlockAt(0, 0, 17));
-            gates.add(Main.arena.getBlockAt(-1, 0, 17));
-        }
+    
 
-        if(team == Team.RED) {
-            gates.add(Main.arena.getBlockAt(1, 0, -17));
-            gates.add(Main.arena.getBlockAt(0, 0, -17));
-            gates.add(Main.arena.getBlockAt(-1, 0, -17));
+    
+
+    public static void updateTeamHearts() {
+        for(Team team : Team.values()) {
+            int hearts = 0;
+            for(String uuid : getLivingPlayers(team)) {
+                Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+                if (player == null) continue;
+                hearts += player.getHealthScale();
+            }
+            setTeamHearts(hearts, team);
         }
-        return gates;
     }
 
-    public static List<Block> getGatesBarriers(Team team) {
-        List<Block> gates = new ArrayList<>();
-        if(team == Team.BLUE) {
-            gates.add(Main.arena.getBlockAt(1, 1, 17));
-            gates.add(Main.arena.getBlockAt(0, 1, 17));
-            gates.add(Main.arena.getBlockAt(-1, 1, 17));
-            gates.add(Main.arena.getBlockAt(0, 2, 17));
-        }
-
-        if(team == Team.RED) {
-            gates.add(Main.arena.getBlockAt(1, 1, -17));
-            gates.add(Main.arena.getBlockAt(0, 1, -17));
-            gates.add(Main.arena.getBlockAt(-1, 1, -17));
-            gates.add(Main.arena.getBlockAt(0, 2, -17));
-        }
-        return gates;
+    public static int getTeamHearts(Team team) {
+        if(team == Team.RED) return redHearts;
+        return blueHearts;
     }
 
-    public static void setOpenGate(Team team, boolean isOpen) {
-        List<Block> gates = Game.getGates(team);
-        for(Block gate : gates) {
-            BlockState gateState = gate.getState();
-            Gate gateData = (Gate) gateState.getBlockData();
-            gateData.setOpen(isOpen);
-            gateState.setBlockData(gateData);
-            gateState.update();
-        }
-        for(Block gateBarriers : getGatesBarriers(team)) {
-            if(isOpen) {
-                gateBarriers.setType(Material.AIR);
-            }
-            if(!isOpen) {
-                gateBarriers.setType(Material.BARRIER);
-            }
-        }
+    public static void setTeamHearts(int hearts, Team team) {
+        if(team == Team.RED) {
+            redHearts = hearts;
+        } else blueHearts = hearts;
     }
 
     public static List<String> getLivingPlayers(Team team) {
@@ -605,6 +567,23 @@ public class Game {
         return null;
     }
 
+    public static List<String> getLivingPlayers() {
+        List<String> alllivingPlayers = new ArrayList<>();
+        alllivingPlayers.addAll(livingPlayersTeamRed);
+        alllivingPlayers.addAll(livingPlayersTeamBlue);
+        return alllivingPlayers;
+    }
+
+    public static void clearTeam(Team team) {
+        for(String uuid : getTeamPlayers(team)) {
+            removePlayerTeam(uuid);
+        }
+    }
+
+    public static Map<String, Team> getTeamsPlayer() {
+        return teamsPlayerUUIDs;
+    }
+    
     public static List<String> getTeamPlayers(Team team) {
         List<String> teamPlayers = new ArrayList<>();
         for(Map.Entry<String, Team> teamPlayer : getTeamsPlayer().entrySet()) {
@@ -625,14 +604,11 @@ public class Game {
     }
 
     public static String decodeSekToMinSek(int sek) {
-        int timer2 = sek/60;
-        int timer3 = timer2*60;
-        int timer4 = sek-timer3;
+        int min = sek/60;
+        int mintesInSek = min*60;
+        int newSek = sek-mintesInSek;
 
-        int min = timer2;
-        int newSek = timer4;
-
-        return min + ":" + newSek;
+        return String.format("%02d:%02d", min, newSek);
     }
 
 }

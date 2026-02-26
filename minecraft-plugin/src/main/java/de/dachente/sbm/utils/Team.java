@@ -6,8 +6,8 @@ import org.bukkit.Location;
 
 public enum Team {
 
-    BLUE("§9", Color.BLUE,"Team Blau", "team-blue", new Location(Main.arena, 3, 0, 27, 90, 0)),
-    RED("§c", Color.RED,"Team Rot", "team-red", new Location(Main.arena, 4, 0, -27, 90, 0));
+    BLUE("§9", Color.BLUE,"Team Blau", "team-blue", new Location(Main.arena, 71.5, 0, 45.5, 0, 0)),
+    RED("§c", Color.RED,"Team Rot", "team-red", new Location(Main.arena, 71.5, 0, -44.5, 180, 0));
 
 
     Team(String chatColor, Color color, String name, String id, Location teamSpawnLocation) {

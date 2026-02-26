@@ -3,6 +3,8 @@ package de.dachente.sbm.listeners;
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.Server;
+import de.dachente.sbm.utils.enums.Status;
 import net.kyori.adventure.text.Component;
 
 import org.bukkit.GameMode;
@@ -20,27 +22,27 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         event.joinMessage(Component.empty());
-        Game.sendInfo("§a✓ §7§oDer Spieler §7" + Main.toPlain(player.displayName()) + " §oist jetzt auf dem Server!", "§cServer");
+        Game.sendInfo("§a➕ §7§oDer Spieler §7" + Main.toPlain(player.displayName()) + " §oist jetzt auf dem Server!", "§cServer");
 
         if(!player.hasPermission(config.getString("permission.sbm.allow.behold-gamemode"))) {
             player.setGameMode(GameMode.ADVENTURE);
         }
 
-        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName()) && !Game.isOpen()) {
-            player.teleport(Main.lobby.getSpawnLocation());
+        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName())) {
+            if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
+            if(!Game.getLivingPlayers().contains(player.getUniqueId().toString())) {
+                Game.setGameServerHotbar(player);
+                if(Game.isInTeam(player)) Main.setPlayerStatus(Status.DEAD, player);
+                else Main.setPlayerStatus(Status.WATCHING, player);
+            } 
+            if(Game.isRoundGoing) Game.bossBar.addPlayer(player);
         }
 
-        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName()) && !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
-            Game.setGameServerHotbar(player);
+        if(player.getWorld().getName().equalsIgnoreCase(Main.lobby.getName())) {
+            Main.joinServer(Server.LOBBY, player, true);
         }
 
-        if(player.getWorld().getPlayers().equals(Main.arena.getName()) && Game.isStarted) {
-            Game.bossBar.addPlayer(player);
-        }
-
-        if(player.getWorld().getName().equalsIgnoreCase(Main.lobby.getName()) && !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
-            Game.setLobbyHotbar(player);
-        }
+        Main.updatePlayerStatus(player);
 
         if(Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
             Team team = Game.getTeamsPlayer().get(player.getUniqueId().toString());
@@ -50,7 +52,6 @@ public class JoinListener implements Listener {
                 player.teleport(Main.arena.getSpawnLocation());
                 Game.getLivingPlayers(team).remove(player.getUniqueId().toString());
             }
-            player.playerListName(Component.text(team.getChatColor() + player.displayName()));
             Game.getTeamPlayers(team).add(player.getUniqueId().toString());
         }
     }

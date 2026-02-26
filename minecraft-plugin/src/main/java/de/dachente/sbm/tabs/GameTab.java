@@ -26,17 +26,16 @@ public class GameTab implements TabCompleter {
                 tab.add("close");
             } else
                 tab.add("open");
-            if(Game.isStarted) {
+            if(Game.isRoundGoing) {
                 tab.add("stop");
-            } else
-                tab.add("start");
+            }
+            tab.add("round");
             tab.add("gate");
             tab.add("dead");
-            tab.add("next");
-            tab.add("re-match");
+
             tab.add("bonus-snowball");
             tab.add("game-joining");
-            tab.add("winner");
+            
             return tab;
         }
 
@@ -47,9 +46,9 @@ public class GameTab implements TabCompleter {
                 tab.add("open");
                 tab.add("close");
             }
-            if(args[0].equalsIgnoreCase("dead") || args[0].equalsIgnoreCase("winner")) {
+            if(args[0].equalsIgnoreCase("dead")) {
                 for(Player all : Bukkit.getOnlinePlayers()) {
-                    if(!Game.getTeamsPlayer().containsKey(all.getUniqueId().toString())) continue;
+                    if(!Game.getLivingPlayers().contains(all.getUniqueId().toString())) continue;
                     tab.add(all.getName());
                 }
             }
@@ -59,6 +58,9 @@ public class GameTab implements TabCompleter {
             if(args[0].equalsIgnoreCase("game-joining")) {
                 tab.add("on");
                 tab.add("off");
+            }
+            if(args[0].equalsIgnoreCase("round")) {
+                tab.add("start");
             }
             return tab;
         }

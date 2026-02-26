@@ -2,6 +2,7 @@ package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.Server;
 
 import java.util.function.Consumer;
 
@@ -28,8 +29,7 @@ public class LobbyCommand implements CommandExecutor {
             return true;
         }
 
-        player.teleport(Main.lobby.getSpawnLocation());
-        Game.setLobbyHotbar(player);
+        Main.joinServer(Server.LOBBY, player);
         return false;
     }
 }

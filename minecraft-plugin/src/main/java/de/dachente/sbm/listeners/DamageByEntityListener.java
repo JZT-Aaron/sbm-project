@@ -15,7 +15,7 @@ public class DamageByEntityListener implements Listener {
     public void onDamage(EntityDamageByEntityEvent event) {
         if(!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
-        if(player.getWorld().equals(Main.lobby) || !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString()) || !Game.isStarted
+        if(player.getWorld().equals(Main.lobby) || !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString()) || !Game.isRoundGoing
                 || (!Game.livingPlayersTeamBlue.contains(player.getUniqueId().toString()) && !Game.livingPlayersTeamRed.contains(player.getUniqueId().toString()))) {
             event.setCancelled(true);
             return;
@@ -41,13 +41,14 @@ public class DamageByEntityListener implements Listener {
             return;
         }
 
-        if(Game.isStarted && (Game.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
+        if(Game.isRoundGoing && (Game.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
             Game.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§owurde von " + Game.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogetroffen.");
             if(player.getHealthScale() <= 2) {
                 Game.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§oist durch " + Game.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogestorben.");
                 Game.deadMode(player);
             } else
                 player.setHealthScale(player.getHealthScale()-2);
+            Game.updateTeamHearts();
             event.setCancelled(false);
         }
     }

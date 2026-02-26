@@ -1,27 +1,58 @@
 package de.dachente.sbm.main;
 
-import de.dachente.sbm.commands.*;
-import de.dachente.sbm.listeners.*;
-import de.dachente.sbm.tabs.GameTab;
-import de.dachente.sbm.tabs.InfoTab;
-import de.dachente.sbm.tabs.TeamTab;
-import de.dachente.sbm.tabs.VoidTab;
-import de.dachente.sbm.utils.Game;
-import de.dachente.sbm.utils.Repeat;
-import de.dachente.sbm.utils.Team;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.DyeColor;
+import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Consumer;
+import de.dachente.sbm.commands.GameCommand;
+import de.dachente.sbm.commands.GameServerCommand;
+import de.dachente.sbm.commands.InfoCommand;
+import de.dachente.sbm.commands.LobbyCommand;
+import de.dachente.sbm.commands.TeamCommand;
+import de.dachente.sbm.listeners.BlockBreakListener;
+import de.dachente.sbm.listeners.BlockRedstoneHandler;
+import de.dachente.sbm.listeners.DamageByEntityListener;
+import de.dachente.sbm.listeners.DamageListener;
+import de.dachente.sbm.listeners.InteractListener;
+import de.dachente.sbm.listeners.InventoryClickListener;
+import de.dachente.sbm.listeners.ItemDropListener;
+import de.dachente.sbm.listeners.JoinListener;
+import de.dachente.sbm.listeners.MoveListener;
+import de.dachente.sbm.listeners.PlayerToggleSnakeListener;
+import de.dachente.sbm.listeners.QuitListener;
+import de.dachente.sbm.listeners.SnowballHitListener;
+import de.dachente.sbm.managers.GateManager;
+import de.dachente.sbm.tabs.GameTab;
+import de.dachente.sbm.tabs.InfoTab;
+import de.dachente.sbm.tabs.TeamTab;
+import de.dachente.sbm.tabs.VoidTab;
+import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.Repeat;
+import de.dachente.sbm.utils.enums.Language;
+import de.dachente.sbm.utils.enums.Server;
+import de.dachente.sbm.utils.enums.SignFrame;
+import de.dachente.sbm.utils.enums.Status;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public final class Main extends JavaPlugin {
 
@@ -31,17 +62,23 @@ public final class Main extends JavaPlugin {
     public static NamespacedKey NO_MOVE;
     public static NamespacedKey TAG_KEY;
 
+    private static Map<String, Status> playerStatus = new HashMap<>();
+
     @Override
     public void onEnable() {
         getLogger().info("Plugin is starting ...");
 
         plugin = this;
         saveDefaultConfig();
+        loadLang();
 
-        new WorldCreator("SBM-Arena").createWorld();
+        new WorldCreator(Server.EVENT_SERVER.getWorldName()).createWorld();
 
-        lobby = Bukkit.getWorld("SBM-Lobby");
-        arena = Bukkit.getWorld("SBM-Arena");
+        lobby = Bukkit.getWorld(Server.LOBBY.getWorldName());
+        arena = Bukkit.getWorld(Server.EVENT_SERVER.getWorldName());
+
+        Server.LOBBY.setWorld(lobby);
+        Server.EVENT_SERVER.setWorld(arena);
 
         NO_MOVE = new NamespacedKey(this, "no-move");
         TAG_KEY = new NamespacedKey(this, "tag-data");
@@ -66,16 +103,7 @@ public final class Main extends JavaPlugin {
             armorStand.remove();
         }
 
-        for(Map.Entry<String, Team> map : Game.getTeamsPlayer().entrySet()) {
-            Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
-            if(player == null) return;
-            Game.removePlayerTeam(map.getKey());
-        }
-
-        Game.bossBar.setVisible(false);
-        Game.bossBar.removeAll();
-        Game.livingPlayersTeamBlue.clear();
-        Game.livingPlayersTeamRed.clear();
+        Game.hardReset();
 
         getLogger().info("Plugin is stopped.");
     }
@@ -124,13 +152,22 @@ public final class Main extends JavaPlugin {
         List<Location> bluePressurePlates = new ArrayList<>();
         List<Location> redPressurePlates = new ArrayList<>();
         Map<Location, List<Location>> barriersPerGate = new HashMap<>();
+
+        List<Location> blueSigns = new ArrayList<>();
+        List<Location> redSigns = new ArrayList<>();
         
         ConfigurationSection plateSection = getConfig().getConfigurationSection("gates-pos.plates");
         ConfigurationSection barrierSection = getConfig().getConfigurationSection("gates-pos.barriers");
+        ConfigurationSection signSection = getConfig().getConfigurationSection("gates-pos.signs");
         
+        
+
         for(String key : plateSection.getKeys(false)) {
             List<Location> plateLocations = parseList(plateSection.getString(key));
             List<Location> barrierLocations = parseList(barrierSection.getString(key));
+
+            blueSigns.addAll(parseList(signSection.getString(key)));
+            redSigns.addAll(blueSigns.stream().map(this::getMirrorLocation).toList());
 
             List<Location> mirrorBarrierLocations = barrierLocations.stream().map(this::getMirrorLocation).toList();
 
@@ -144,8 +181,9 @@ public final class Main extends JavaPlugin {
 
         }
 
-        GateManager.setBluePressurePlates(bluePressurePlates, redPressurePlates);
+        GateManager.setPressurePlates(bluePressurePlates, redPressurePlates);
         GateManager.setBarrierPerGate(barriersPerGate);
+        GateManager.setSigns(blueSigns, redSigns);
     }
 
     private Location getMirrorLocation(Location loc) {
@@ -216,5 +254,41 @@ public final class Main extends JavaPlugin {
 
     public static String toPlain(Component component) {
         return PlainTextComponentSerializer.plainText().serialize(component);
+    }
+
+    public static void joinServer(Server server, Player player) {
+        joinServer(server, player, false);
+    }
+
+    // Player Status
+
+    public static Status getPlayerStatus(Player player) {
+        return playerStatus.get(player.getUniqueId().toString());
+    }
+
+    public static void setPlayerStatus(Status status, Player player) {
+        playerStatus.remove(player.getUniqueId().toString());
+        playerStatus.put(player.getUniqueId().toString(), status);
+        updatePlayerStatus(status, player);
+    }
+
+    public static void updatePlayerStatus(Player player) {
+        updatePlayerStatus(getPlayerStatus(player), player);
+    }    
+
+    private static void updatePlayerStatus(Status status, Player player) {
+        String playerColor = Game.isInTeam(player) ? Game.getTeam(player).getChatColor() : "§f";
+        player.playerListName(Component.text(" " + status.getSymbol() + " §7| " + playerColor + toPlain(player.displayName())));
+    }
+
+    public static void joinServer(Server server, Player player, boolean keepPosition) {
+        Game.setServerHotbar(server, player);
+        setPlayerStatus(server.getStatus(), player);
+        if(!keepPosition) player.teleport(server.getWorld().getSpawnLocation());
+        if(server == Server.EVENT_SERVER) {
+            if(Game.isRoundGoing) {
+                if(!Game.bossBar.getPlayers().contains(player)) Game.bossBar.addPlayer(player);
+            } 
+        }
     }
 }

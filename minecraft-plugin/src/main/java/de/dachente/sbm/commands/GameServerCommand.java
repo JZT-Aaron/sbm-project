@@ -2,6 +2,8 @@ package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.Server;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,18 +19,12 @@ public class GameServerCommand implements CommandExecutor {
             return true;
         }
 
-        if(args.length != 0) {
-            Game.sendInfo("§oBitte benutze §7/game-server§o!", player);
-            return true;
-        }
-
-        if(Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
+        if(Game.getLivingPlayers().contains(player.getUniqueId().toString()) && !player.isOp()) {
             Game.sendInfo("Du kannst das jetzt nicht tun!", player);
             return true;
         }
 
-        Game.setGameServerHotbar(player);
-        player.teleport(Main.arena.getSpawnLocation());
+        Main.joinServer(Server.EVENT_SERVER, player);
         return false;
     }
 }

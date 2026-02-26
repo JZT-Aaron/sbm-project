@@ -6,8 +6,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
-
 public class Repeat {
 
     public static int taskID;
@@ -16,25 +14,12 @@ public class Repeat {
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             @Override
             public void run() {
-                for(Player all : Bukkit.getOnlinePlayers()) {
-                    if(Game.isSnowing) {
-                        all.spawnParticle(Particle.FIREWORK, all.getLocation(),500, 7, 7, 7, 0.01);
-                    }
-                    if(Game.isStarted) {
-                        int blueHeats = 0;
-                        int redHeats = 0;
-                        for(String uuid : Game.livingPlayersTeamBlue) {
-                            Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-                            if (player == null) continue;
-                            blueHeats += player.getHealthScale();
-                        }
-                        for(String uuid : Game.livingPlayersTeamRed) {
-                            Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-                            if (player == null) continue;
-                            redHeats += player.getHealthScale();
-                        }
-                        all.sendActionBar(Component.text("§9§l♥ " + (blueHeats/2) + " §7- §c§l♥ " + (redHeats/2)));
-                    }
+                if(Game.isSnowing) {
+                    for(Player all : Bukkit.getOnlinePlayers()) all.spawnParticle(Particle.FIREWORK, all.getLocation(), 500, 7, 7, 7, 0.01);
+                }
+                if(Game.isRoundGoing) {
+                    for(Player all : Bukkit.getOnlinePlayers()) 
+                        all.sendActionBar(Component.text("§9§l♥ " + (Game.getTeamHearts(Team.BLUE)/2) + " §7- §c§l♥ " + (Game.getTeamHearts(Team.RED)/2)));
                 }
             }
         }, 0, 15);
