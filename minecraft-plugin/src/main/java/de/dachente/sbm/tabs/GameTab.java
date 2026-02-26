@@ -43,10 +43,9 @@ public class GameTab implements TabCompleter {
         if(args.length == 2) {
             List<String> tab = new ArrayList<>();
             if(args[0].equalsIgnoreCase("open")) tab.add("timer");
-            if(args[0].equalsIgnoreCase("gate") ||args[0].equalsIgnoreCase("bonus-snowball")) {
-                for(Team team : Team.values()) {
-                    tab.add(team.getId());
-                }
+            if(args[0].equalsIgnoreCase("gate")) {
+                tab.add("open");
+                tab.add("close");
             }
             if(args[0].equalsIgnoreCase("dead") || args[0].equalsIgnoreCase("winner")) {
                 for(Player all : Bukkit.getOnlinePlayers()) {
@@ -72,8 +71,9 @@ public class GameTab implements TabCompleter {
                 tab.add("set");
             }
             if(args[0].equalsIgnoreCase("gate")) {
-                tab.add("open");
-                tab.add("close");
+                for(Team team : Team.values()) {
+                    tab.add(team.getId());
+                }
             }
             return tab;
         }

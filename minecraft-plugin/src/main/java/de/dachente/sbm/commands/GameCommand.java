@@ -49,24 +49,16 @@ public class GameCommand implements CommandExecutor {
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("gate") && args.length == 3) {
-            Team team = Team.getTeamById(args[1]);
+        if(args[0].equalsIgnoreCase("gate") && args.length >= 2) {
+            Team team = args.length == 3 ? Team.getTeamById(args[2]) : null;
             boolean openState;
-            if(args[2].equalsIgnoreCase("open")) {
-                openState = true;
-            } else
-                if(args[2].equalsIgnoreCase("close")) {
-                    openState = false;
-                } else {
+            if(args[1].equalsIgnoreCase("open") | args[1].equalsIgnoreCase("close")) openState = args[1].equalsIgnoreCase("open") ? true : false; 
+            else {
                     sendReply.accept("Bitte benutze §7open/close §ofür den zustand der Tore.");
                     return true;
                 }
-
-            if(team == null) {
-                sendReply.accept("§c§oDieses Team gibt es nicht!");
-                return true;
-            }
-            GateManager.setGateActive(openState);
+            if(team == null) GateManager.setGateActive(openState);
+            else GateManager.setGateActive(openState, team);
         }
 
         if(args[0].equalsIgnoreCase("close")) {
