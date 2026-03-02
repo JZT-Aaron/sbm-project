@@ -1,4 +1,6 @@
 # --- JAVA / MAVEN ---
+**/.vscode/
+**/scripts/
 */bot-test/
 **/target/
 **/*.jar
