@@ -249,7 +249,7 @@ public final class Main extends JavaPlugin {
     }
 
     public static Consumer<String> getCmdReplyConsumer(String senderName, Player player) {
-        return msg -> Game.sendInfo(msg, senderName, player);
+        return msg -> Info.sendInfo(msg, senderName, player);
     }
 
     public static String toPlain(Component component) {
@@ -277,7 +277,7 @@ public final class Main extends JavaPlugin {
     }    
 
     private static void updatePlayerStatus(Status status, Player player) {
-        String playerColor = Game.isInTeam(player) ? Game.getTeam(player).getChatColor() : "§f";
+        String playerColor = TeamManager.isInTeam(player) ? TeamManager.getTeam(player).getChatColor() : "§f";
         player.playerListName(Component.text(" " + status.getSymbol() + " §7| " + playerColor + toPlain(player.displayName())));
     }
 

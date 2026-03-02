@@ -1,6 +1,7 @@
 package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.Info;
 import net.kyori.adventure.text.Component;
 
 import org.bukkit.Bukkit;
@@ -104,15 +105,15 @@ public class StartClock {
                 }
 
                 if (isOpeningToday && isBetween(h, 1, 9) && m+s == 0) {
-                    Game.sendInfo(NAME + " öffnet in §7" + h + " §oStunden!");
+                    Info.sendInfo(NAME + " öffnet in §7" + h + " §oStunden!");
                 }
                 if (isOpeningToday && h+s == 0 && m != 0) {
                     switch (m) {
                         case 60: case 50: case 40: case 30: case 20: case 10: case 5: case 3: case 2:
-                            Game.sendInfo(NAME + " öffnet in §7" + m + " §oMinuten!");
+                            Info.sendInfo(NAME + " öffnet in §7" + m + " §oMinuten!");
                             break;
                         case 1:
-                            Game.sendInfo(NAME + " öffnet in §7einer §oMinute!");
+                            Info.sendInfo(NAME + " öffnet in §7einer §oMinute!");
                             break;
                         default:
                             return;
@@ -122,18 +123,18 @@ public class StartClock {
                 if (isOpeningToday && h+m == 0 && s != 0) {
                     switch (s) {
                         case 60: case 50: case 40: case 30: case 20: case 10: case 5:
-                            Game.sendInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
+                            Info.sendInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
                             break;
                         case 3: case 2:
                             for (Player all : Bukkit.getOnlinePlayers()) {
-                                Game.showTitle("§c§l" + s, all);
-                                Game.sendImportantInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
+                                Info.showTitle("§c§l" + s, all);
+                                Info.sendImportantInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
                             }
                             break;
                         case 1:
                             for (Player all : Bukkit.getOnlinePlayers())
-                                Game.showTitle("§c§l" + s, all);
-                            Game.sendImportantInfo(NAME + " öffnet in §7einer §oSekunden!");
+                                Info.showTitle("§c§l" + s, all);
+                            Info.sendImportantInfo(NAME + " öffnet in §7einer §oSekunden!");
                             break;
                         default:
                             return;

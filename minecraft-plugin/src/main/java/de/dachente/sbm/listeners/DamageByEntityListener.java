@@ -1,6 +1,8 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.Team;
 import org.bukkit.entity.Player;
@@ -15,13 +17,13 @@ public class DamageByEntityListener implements Listener {
     public void onDamage(EntityDamageByEntityEvent event) {
         if(!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
-        if(player.getWorld().equals(Main.lobby) || !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString()) || !Game.isRoundGoing
+        if(player.getWorld().equals(Main.lobby) || !TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()) || !Game.isRoundGoing
                 || (!Game.livingPlayersTeamBlue.contains(player.getUniqueId().toString()) && !Game.livingPlayersTeamRed.contains(player.getUniqueId().toString()))) {
             event.setCancelled(true);
             return;
         }
 
-        Team team = Game.getTeamsPlayer().get(player.getUniqueId().toString());
+        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         Player damager = null;
 
         if(event.getDamager() instanceof Snowball) {
@@ -36,15 +38,15 @@ public class DamageByEntityListener implements Listener {
         }
 
         if(damager == null) return;
-        if(!Game.getTeamsPlayer().containsKey(damager.getUniqueId().toString())) {
+        if(!TeamManager.getTeamsPlayer().containsKey(damager.getUniqueId().toString())) {
             event.setCancelled(true);
             return;
         }
 
-        if(Game.isRoundGoing && (Game.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
-            Game.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§owurde von " + Game.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogetroffen.");
+        if(Game.isRoundGoing && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
+            Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§owurde von " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogetroffen.");
             if(player.getHealthScale() <= 2) {
-                Game.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§oist durch " + Game.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogestorben.");
+                Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§oist durch " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogestorben.");
                 Game.deadMode(player);
             } else
                 player.setHealthScale(player.getHealthScale()-2);

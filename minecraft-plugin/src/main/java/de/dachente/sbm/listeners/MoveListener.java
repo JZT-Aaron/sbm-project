@@ -1,5 +1,6 @@
 package de.dachente.sbm.listeners;
 
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,7 +12,7 @@ public class MoveListener implements Listener {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-        if(!Game.isReMatch || !Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
+        if(!Game.isReMatch || !TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
             return;
         }
 

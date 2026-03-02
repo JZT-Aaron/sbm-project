@@ -1,7 +1,7 @@
 package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
-import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Team;
 
 import java.util.function.Consumer;
@@ -62,35 +62,35 @@ public class TeamCommand implements CommandExecutor {
         }
 
         if(args[0].equalsIgnoreCase("add")) {
-            Game.addPlayerTeam(target.getUniqueId().toString(), team);
+            TeamManager.addPlayerTeam(target.getUniqueId().toString(), team);
             return true;
         }
 
         if(args[0].equalsIgnoreCase("add-all")) {
-            for(Player all : Main.arena.getPlayers()) Game.addPlayerTeam(all.getUniqueId().toString());;
+            for(Player all : Main.arena.getPlayers()) TeamManager.addPlayerTeam(all.getUniqueId().toString());;
         }
 
         if(args[0].equalsIgnoreCase("remove-all")) {
-            for(Player all : Main.arena.getPlayers()) Game.removePlayerTeam(all.getUniqueId().toString());;
+            for(Player all : Main.arena.getPlayers()) TeamManager.removePlayerTeam(all.getUniqueId().toString());;
         }
 
         if(args[0].equalsIgnoreCase("clear")) {
-            if(Game.getTeamPlayers(team).size() <= 0) {
+            if(TeamManager.getTeamPlayers(team).size() <= 0) {
                 sendReply.accept("§c§oDas §7Team §oist bereits §cleer§o!");
                 return true;
             }
-            for(String teamPlayer : Game.getTeamPlayers(team)) {
-                Game.removePlayerTeam(teamPlayer);
+            for(String teamPlayer : TeamManager.getTeamPlayers(team)) {
+                TeamManager.removePlayerTeam(teamPlayer);
             }
             return true;
         }
 
         if(args[0].equalsIgnoreCase("remove")) {
-            if(!Game.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
+            if(!TeamManager.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
                 sendReply.accept("§c§oDer Spieler §c" + target.getName() + " §oist in keinem §cTeam§o!");
                 return true;
             }
-            Game.removePlayerTeam(target.getUniqueId().toString());
+            TeamManager.removePlayerTeam(target.getUniqueId().toString());
             return true;
         }
 

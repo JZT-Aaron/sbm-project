@@ -1,6 +1,7 @@
 package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.enums.Server;
 
@@ -15,12 +16,12 @@ public class GameServerCommand implements CommandExecutor {
         if(!(sender instanceof Player player)) return true;
 
         if(!Game.isOpen() && !player.isOp()) {
-            Game.sendInfo("§cDer Event-Server ist noch nicht Offen!", player);
+            Info.sendInfo("§cDer Event-Server ist noch nicht Offen!", player);
             return true;
         }
 
         if(Game.getLivingPlayers().contains(player.getUniqueId().toString()) && !player.isOp()) {
-            Game.sendInfo("Du kannst das jetzt nicht tun!", player);
+            Info.sendInfo("Du kannst das jetzt nicht tun!", player);
             return true;
         }
 

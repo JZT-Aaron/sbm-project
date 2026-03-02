@@ -2,6 +2,8 @@ package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.GateManager;
+import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.enums.Server;
 import de.dachente.sbm.utils.enums.Status;
 import net.kyori.adventure.text.Component;
@@ -39,7 +41,6 @@ public class Game {
     public static boolean isRoundGoing = false;
     public static boolean isReMatch = false;
     public static boolean isJoiningOpen = true;
-    private static Map<String, Team> teamsPlayerUUIDs = new HashMap<>();
     public static List<String> livingPlayersTeamBlue = new ArrayList<>();
     public static List<String> livingPlayersTeamRed = new ArrayList<>();
     public static List<String> leftTeamPlayers = new ArrayList<>();
@@ -64,7 +65,7 @@ public class Game {
     public static void setViewer(Player player) {
         player.teleport(Main.arena.getSpawnLocation());
         player.getInventory().clear();
-        if(getTeamsPlayer().containsKey(player.getUniqueId().toString())) setTeamChestPlate(player);
+        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) setTeamChestPlate(player);
         else Main.setPlayerStatus(Status.WATCHING, player);
         player.setHealthScale(20);
         player.setHealth(20);
@@ -84,7 +85,7 @@ public class Game {
         }
         StartClock.setSignsInfo("§a§oOffen");
         StartClock.openDateDiffrenceText = StartClock.NO_DATE_AVAILABLE;
-        sendImportantInfo("Der Spiel-Server hat jetzt geöffnet! Ihr könnt über das Menü oder mit /game-server joinen.");
+        Info.sendImportantInfo("Der Spiel-Server hat jetzt geöffnet! Ihr könnt über das Menü oder mit /game-server joinen.");
     }
 
     public static void close() {
@@ -95,13 +96,13 @@ public class Game {
         StartClock.openDateDiffrenceText = StartClock.NO_DATE_AVAILABLE;
         for(Player all : Main.arena.getPlayers()) all.teleport(Main.lobby.getSpawnLocation());
         for(Player all : Bukkit.getOnlinePlayers()) setLobbyHotbar(all);
-        sendImportantInfo("Der Spiel-Server wurde geschlossen!");
+        Info.sendImportantInfo("Der Spiel-Server wurde geschlossen!");
     }
 
     public static void startTimer() {
-        sendImportantInfo("§c§oDas Spiel startet in 5 sek!");
+        Info.sendImportantInfo("§c§oDas Spiel startet in 5 sek!");
         for(Player all : Bukkit.getOnlinePlayers()) {
-            showTitle("§7Tore öffnen in: ", all);
+            Info.showTitle("§7Tore öffnen in: ", all);
         }
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 5;
@@ -111,16 +112,16 @@ public class Game {
                         GateManager.setGateActive(true);
                         for(Player all : Bukkit.getOnlinePlayers()) {
                             all.playSound(all.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 5, 1);
-                            showTitle("§7Tore offen! ", "Verteilt euch", all);
+                            Info.showTitle("§7Tore offen! ", "Verteilt euch", all);
                         }
                         Bukkit.getScheduler().cancelTask(taskID);
                         startSpreadTimer();
                     } else {
                         for(Player all : Bukkit.getOnlinePlayers()) {
-                            showTitle("§7§o" + timer, "Macht euch bereit", all);
+                            Info.showTitle("§7§o" + timer, "Macht euch bereit", all);
                             all.playSound(all.getLocation(), Sound.BLOCK_NOTE_BLOCK_SNARE, 5, 10);
                         }   
-                        sendInfo(timer + "");
+                        Info.sendInfo(timer + "");
                     }
                     timer--;
                 }
@@ -128,16 +129,16 @@ public class Game {
     }
 
     public static void startSpreadTimer() {
-        sendImportantInfo("§c§oDas Spiel startet! §7§oIhr hab 10 sek um euch auf dem Spielfeld zu verteilen!");
+        Info.sendImportantInfo("§c§oDas Spiel startet! §7§oIhr hab 10 sek um euch auf dem Spielfeld zu verteilen!");
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 10;
             @Override
             public void run() {
                 if(timer <= 0) {
-                    sendImportantInfo("§c§oEs geht los!");
+                    Info.sendImportantInfo("§c§oEs geht los!");
                     Bukkit.getScheduler().cancelTask(taskID);
                     for(Player all : Bukkit.getOnlinePlayers()) {
-                        showTitle("§7Start!", "§7Das Feuer ist eröffnet!", all);
+                        Info.showTitle("§7Start!", "§7Das Feuer ist eröffnet!", all);
                         all.playSound(all.getLocation(), Sound.EVENT_RAID_HORN, 10, 1);
                     }
                     isRoundGoing = true;
@@ -146,11 +147,11 @@ public class Game {
                 } 
                 else if(timer <= 10) {
                     for(Player all : Bukkit.getOnlinePlayers()) {
-                        if(timer <= 4) showTitle("§7§o" + timer, "Seit Bereit", all);
+                        if(timer <= 4) Info.showTitle("§7§o" + timer, "Seit Bereit", all);
                         else all.sendActionBar(Component.text("§7§o" + timer));
                         all.playSound(all.getLocation(), Sound.BLOCK_NOTE_BLOCK_SNARE, 5, 10);
                     }
-                    if(timer <= 4) sendInfo(timer + "");
+                    if(timer <= 4) Info.sendInfo(timer + "");
                 }
                 timer--;
             }
@@ -159,7 +160,7 @@ public class Game {
     
     public static void beginRound() {
         startGameTimer(1);
-        for(Map.Entry<String, Team> map : teamsPlayerUUIDs.entrySet()) {
+        for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
             Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
             Main.setPlayerStatus(Status.PLAYING, player);
             if(player == null) return;
@@ -177,14 +178,14 @@ public class Game {
         }
 
         // Hearts Compensation
-        int teamRedSize = Game.getTeamPlayers(Team.RED).size();
-        int teamBlueSize = Game.getTeamPlayers(Team.BLUE).size();
+        int teamRedSize = TeamManager.getTeamPlayers(Team.RED).size();
+        int teamBlueSize = TeamManager.getTeamPlayers(Team.BLUE).size();
         
         int teamSizeDiffence = teamBlueSize - teamRedSize;
         if(teamSizeDiffence != 0) {
             Team derpivedTeam = teamSizeDiffence < 0 ? Team.BLUE : Team.RED;
             
-            List<Player> availableCompensationPlayers = getTeamPlayers(derpivedTeam).stream()
+            List<Player> availableCompensationPlayers = TeamManager.getTeamPlayers(derpivedTeam).stream()
                 .map(uuid -> Bukkit.getPlayer(UUID.fromString(uuid)))
                 .collect(Collectors.toList());
 
@@ -211,8 +212,9 @@ public class Game {
 
     public static void nextRound(Team wonTeam) {
         // Splitting Teams
-        Game.sendInfo("Das Team wird nun aufgeteilt.");
-        for(Map.Entry<String, Team> map : getTeamsPlayer().entrySet()) {
+        Info.sendInfo("Das Team wird nun aufgeteilt.");
+        /* Why nesseary?
+        for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
             if(map.getValue() == wonTeam) {
                 Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
                 player.teleport(wonTeam.getTeamSpawnLocation());
@@ -220,14 +222,8 @@ public class Game {
                 continue;
             }
             
-        }
-        clearTeam(getOppositeTeam(wonTeam));
-        for(int i = 0; i < getTeamPlayers(wonTeam).size()/2; i++) {
-            int playerId = new Random().nextInt(getTeamPlayers(wonTeam).size()-1);
-            String uuid = getTeamPlayers(wonTeam).get(playerId+1);
-            removePlayerTeam(uuid);
-            addPlayerTeam(uuid, getOppositeTeam(wonTeam));
-        }
+        }*/
+        TeamManager.splitTeam(wonTeam);
     }
 
     public static void endRound() {
@@ -242,14 +238,14 @@ public class Game {
 
         // Determine Games Outcome
         if(redHeats == blueHeats) {
-            sendInfo("[DEBUG] End Round Determined: REMATCH");
+            Info.sendInfo("[DEBUG] End Round Determined: REMATCH");
         } 
         else {
             Team winningTeam = (blueHeats > redHeats) ? Team.BLUE : Team.RED;
-            if(getTeamPlayers(winningTeam).size() <= 1) {
-                winner(Bukkit.getPlayer(UUID.fromString(getTeamPlayers(winningTeam).get(0))));
+            if(TeamManager.getTeamPlayers(winningTeam).size() <= 1) {
+                winner(Bukkit.getPlayer(UUID.fromString(TeamManager.getTeamPlayers(winningTeam).get(0))));
             } else {
-                sendImportantInfo("Das Team " + winningTeam.getChatColor() + winningTeam.getName() + " §7§okommt weiter.");
+                Info.sendImportantInfo("Das Team " + winningTeam.getChatColor() + winningTeam.getName() + " §7§okommt weiter.");
                 nextRound(winningTeam);
             } 
         }
@@ -273,13 +269,13 @@ public class Game {
     public static void hardReset() {
         resetRound();
         isRoundGoing = false;
-        for(Team team : Team.values()) clearTeam(team);
+        for(Team team : Team.values()) TeamManager.clearTeam(team);
     }
 
     public static void winner(Player player) {
-        Game.sendImportantInfo("Der Spieler §6" + player.getName() + " §7§ohat die Schneeballschlacht gewonnen!");
+        Info.sendImportantInfo("Der Spieler §6" + player.getName() + " §7§ohat die Schneeballschlacht gewonnen!");
         for(Player all : Main.arena.getPlayers()) {
-            showTitle("§6§l§n" + player.getName(), "§7§lhat gewonnen", all);
+            Info.showTitle("§6§l§n" + player.getName(), "§7§lhat gewonnen", all);
             all.playSound(all.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 5, 1);
             if(all == player) continue;
             Location l = all.getLocation();
@@ -309,10 +305,10 @@ public class Game {
     }
 
     public static void startReMatch() {
-        Game.sendImportantInfo("Das Spielfeld wird wegen eines Unentschiedens geändert.");
+        Info.sendImportantInfo("Das Spielfeld wird wegen eines Unentschiedens geändert.");
         for(Player all : Main.arena.getPlayers()) {
             if(livingPlayersTeamBlue.contains(all.getUniqueId().toString()) || livingPlayersTeamRed.contains(all.getUniqueId().toString())) {
-                Team team = getTeamsPlayer().get(all.getUniqueId().toString());
+                Team team = TeamManager.getTeamsPlayer().get(all.getUniqueId().toString());
                 if(team == Team.BLUE) {
                     all.teleport(new Location(Main.arena, 0.5, 2, -83.5, 180, 0));
                 }
@@ -344,85 +340,8 @@ public class Game {
         }
     }
 
-    public static void showTitle(String text, String subtitle, TitleTime titleTime, Player player) {
-        player.showTitle(Title.title(Component.text(text), Component.text(subtitle), titleTime.getTimes()));
-    }
-
-    public static void showTitle(String text, Player player) {
-        showTitle(text, "", player);
-    }
-
-    public static void showTitle(String title, String subtitle, Player player) {
-        showTitle(title, subtitle, TitleTime.NORMAL, player);
-    }
-
-    //Change Here Server Message send Format
-    public static String getServerMessageFormat(String message, String senderName) {
-        return "§7• §b" + senderName + " §7| >> §o" + message;
-    }
-
-    public static void broadcastMessage(String message) {
-        Bukkit.broadcast(Component.text(message));
-    }
-
-    public static void sendInfo(String message) {
-        sendInfo(message, "Info");
-    }
-
-    public static void sendInfo(String message, String senderName) {
-        broadcastMessage(getServerMessageFormat(message, senderName));
-    }
-
-    public static void sendImportantInfo(String message) {
-        sendInfo(message, "§cWichtige Info");
-    }
-
-    public static void sendInfo(String message, Player receiver) {
-        sendInfo(message, "Info §7◆ §ePrivate§7", receiver);
-    }
-
-    public static void sendInfo(String message, String senderName, Player receiver) {
-        receiver.sendMessage(getServerMessageFormat(message, senderName));
-    }
-
-    public static void addPlayerTeam(String uuid) {
-        Team team = null;
-        if(getTeamPlayers(Team.RED).size() < getTeamPlayers(Team.BLUE).size()) {
-            team = Team.RED;
-        }
-        if(getTeamPlayers(Team.BLUE).size() < getTeamPlayers(Team.RED).size()) {
-            team = Team.BLUE;
-        }
-        if(getTeamPlayers(Team.RED).size() == getTeamPlayers(Team.BLUE).size()) {
-            int i = new Random().nextInt(2);
-            if(i == 0) {
-                team = Team.BLUE;
-            }
-            if(i == 1) {
-                team = Team.RED;
-            }
-        }
-        addPlayerTeam(uuid, team);
-    }
-
-    public static void addPlayerTeam(String uuid, Team team) {
-        Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-        player.getInventory().clear();
-        //Location teamSpawnLocation = null;
-
-        teamsPlayerUUIDs.put(uuid, team);
-
-        player.teleport(team.getTeamSpawnLocation());
-
-        loadLobbyInv(player);
-        player.updateInventory();
-
-        setTeamChestPlate(team, player);
-        sendInfo("§oDu bist jetzt in " + team.getChatColor() + team.getName() + "§7.", "Info", Bukkit.getPlayer(UUID.fromString(uuid)));
-    }
-
     public static void setTeamChestPlate(Player player) {
-        Team team = getTeamsPlayer().get(player.getUniqueId().toString());
+        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         setTeamChestPlate(team, player);
     }
 
@@ -435,18 +354,6 @@ public class Game {
         teamChestplateMeta.addItemFlags(ItemFlag.HIDE_DYE);
         teamChestplate.setItemMeta(teamChestplateMeta);
         player.getInventory().setChestplate(teamChestplate);
-    }
-
-    public static void removePlayerTeam(String uuid) {
-        Team team = teamsPlayerUUIDs.get(uuid);
-        if(team == null) return;
-
-        Player player = Bukkit.getPlayer(UUID.fromString(uuid));
-
-        teamsPlayerUUIDs.remove(uuid);
-
-        setViewer(player);    
-        sendInfo("§oDu bist jetzt nicht mehr " + team.getChatColor() + team.getName() + "§7.", Bukkit.getPlayer(UUID.fromString(uuid)));
     }
 
     public static void setServerHotbar(Server server, Player player) {
@@ -496,7 +403,7 @@ public class Game {
     public static void deadMode(Player player) {
         Main.setPlayerStatus(Status.DEAD, player);
 
-        Team team = getTeamsPlayer().get(player.getUniqueId().toString());
+        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         getLivingPlayers(team).remove(player.getUniqueId().toString());
         
         updateTeamHearts();
@@ -518,19 +425,7 @@ public class Game {
         player.openInventory(inv);
     }
 
-    public static boolean isInTeam(Player player) {
-       return Game.getTeamsPlayer().containsKey(player.getUniqueId().toString());
-    }
-
-    public static Team getTeam(Player player) {
-        return Game.getTeamsPlayer().get(player.getUniqueId().toString());
-    }
-
     public static boolean isOpen() { return config.getBoolean("game.open"); }
-
-    
-
-    
 
     public static void updateTeamHearts() {
         for(Team team : Team.values()) {
@@ -572,35 +467,6 @@ public class Game {
         alllivingPlayers.addAll(livingPlayersTeamRed);
         alllivingPlayers.addAll(livingPlayersTeamBlue);
         return alllivingPlayers;
-    }
-
-    public static void clearTeam(Team team) {
-        for(String uuid : getTeamPlayers(team)) {
-            removePlayerTeam(uuid);
-        }
-    }
-
-    public static Map<String, Team> getTeamsPlayer() {
-        return teamsPlayerUUIDs;
-    }
-    
-    public static List<String> getTeamPlayers(Team team) {
-        List<String> teamPlayers = new ArrayList<>();
-        for(Map.Entry<String, Team> teamPlayer : getTeamsPlayer().entrySet()) {
-            if(teamPlayer.getValue() != team) continue;
-            teamPlayers.add(teamPlayer.getKey());
-        }
-        return teamPlayers;
-    }
-
-    public static Team getOppositeTeam(Team team) {
-        if(Team.BLUE == team) {
-            return Team.RED;
-        }
-        if(Team.RED == team) {
-            return Team.BLUE;
-        }
-        return null;
     }
 
     public static String decodeSekToMinSek(int sek) {

@@ -1,7 +1,7 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
-import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Team;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -22,13 +22,13 @@ public class SnowballHitListener implements Listener {
         Snowball snowball = (Snowball) event.getEntity();
         Player player = (Player) snowball.getShooter();
 
-        if(!Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) return;
+        if(!TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) return;
 
-        Team team = Game.getTeamsPlayer().get(player.getUniqueId().toString());
+        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
 
         if(event.getHitEntity() != null && (event.getHitEntity() instanceof Player)) {
             Player hitPlayer = (Player) event.getHitEntity();
-            Team hitTeam = Game.getTeamsPlayer().get(hitPlayer.getUniqueId().toString());
+            Team hitTeam = TeamManager.getTeamsPlayer().get(hitPlayer.getUniqueId().toString());
             if(hitTeam == team) {
                 snowball.getWorld().dropItem(snowball.getLocation(), snowball.getItem());
                 return;

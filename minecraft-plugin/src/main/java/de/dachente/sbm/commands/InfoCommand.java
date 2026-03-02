@@ -1,7 +1,7 @@
 package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
-import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.managers.Info;
 
 import java.util.function.Consumer;
 
@@ -40,12 +40,12 @@ public class InfoCommand implements CommandExecutor {
         }
 
         if(args[0].equalsIgnoreCase("normal")) {
-            Game.sendInfo(message.toString());
+            Info.sendInfo(message.toString());
             return true;
         }
 
         if(args[0].equalsIgnoreCase("important")) {
-            Game.sendImportantInfo(message.toString());
+            Info.sendImportantInfo(message.toString());
             return true;
         }
 
@@ -63,7 +63,7 @@ public class InfoCommand implements CommandExecutor {
                 privateMessage.append(arg).append(" ");
             }
             sendReply.accept("§7§oDu flüstert zu " + Main.toPlain(player.displayName()) + "§7: " + privateMessage.toString());
-            Game.sendInfo(privateMessage.toString(), target);
+            Info.sendInfo(privateMessage.toString(), target);
             return true;
         }
 

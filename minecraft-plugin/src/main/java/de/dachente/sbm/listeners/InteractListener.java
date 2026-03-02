@@ -1,6 +1,8 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.ItemBuilder;
 
@@ -22,7 +24,7 @@ public class InteractListener implements Listener {
     public void onInteractEvent(PlayerInteractEvent event) throws MalformedURLException {
         Player player = event.getPlayer();
         if(!(player.hasPermission(config.getString("permission.sbm.allow.interact")) || (event.getItem().getType().equals(Material.SNOWBALL))
-                && Game.getTeamsPlayer().containsKey(player.getUniqueId().toString()))) {
+                && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()))) {
             event.setCancelled(true);
         }
         
@@ -40,10 +42,10 @@ public class InteractListener implements Listener {
         if(id.equalsIgnoreCase("join-team")) {
             event.setCancelled(true);
             if(!Game.isJoiningOpen) {
-                Game.sendInfo("Du kannst nicht mehr Teilnehmen!", player);
+                Info.sendInfo("Du kannst nicht mehr Teilnehmen!", player);
                 return;
             }
-            Game.addPlayerTeam(player.getUniqueId().toString());
+            TeamManager.addPlayerTeam(player.getUniqueId().toString());
             player.getInventory().setHeldItemSlot(3);
             return;
         }
@@ -71,7 +73,7 @@ public class InteractListener implements Listener {
         }
 
         if(id.equalsIgnoreCase("leave-team")) {
-            Game.removePlayerTeam(player.getUniqueId().toString());
+            TeamManager.removePlayerTeam(player.getUniqueId().toString());
             return;
         }
     }

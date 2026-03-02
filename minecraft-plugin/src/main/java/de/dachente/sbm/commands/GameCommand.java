@@ -2,6 +2,8 @@ package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.GateManager;
+import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.Team;
@@ -104,7 +106,7 @@ public class GameCommand implements CommandExecutor {
                 sendReply.accept("§cDer Spieler ist nicht auf dem Server!");
                 return true;
             }
-            if(!Game.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
+            if(!TeamManager.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
                 sendReply.accept("§cDer Spieler ist in keinem Team!");
                 return true;
             }
@@ -132,7 +134,7 @@ public class GameCommand implements CommandExecutor {
             boolean isOpen = false;
 
             if(!(args[1].equalsIgnoreCase("on") || args[1].equalsIgnoreCase("off"))) {
-                Game.sendInfo("Bitte nutzte nur §7on §ooder §7off§o.", SENDER_NAME, player);
+                Info.sendInfo("Bitte nutzte nur §7on §ooder §7off§o.", SENDER_NAME, player);
                 return true;
             }
 
@@ -150,7 +152,7 @@ public class GameCommand implements CommandExecutor {
         if(args[0].equalsIgnoreCase("winner") && args.length == 2) {
             Player winner = Bukkit.getPlayer(args[1]);
             if(winner == null) {
-                Game.sendInfo("Dieser Spieler ist nicht Online!", player);
+                Info.sendInfo("Dieser Spieler ist nicht Online!", player);
                 return true;
             }
             Game.winner(winner);
@@ -194,7 +196,7 @@ public class GameCommand implements CommandExecutor {
                     config.set("start.clock.time.h", h);
                     Main.getPlugin().saveConfig();
                     if(config.getBoolean("start.clock.started")) {
-                        Game.sendImportantInfo("Der Start wurde auf den §o" + args[3] + " §lum §o" + args[4] + "§l verschoben");
+                        Info.sendImportantInfo("Der Start wurde auf den §o" + args[3] + " §lum §o" + args[4] + "§l verschoben");
                     }
                 }
             }

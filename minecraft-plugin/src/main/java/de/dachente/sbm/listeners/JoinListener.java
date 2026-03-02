@@ -1,6 +1,8 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.Team;
 import de.dachente.sbm.utils.enums.Server;
@@ -22,7 +24,7 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         event.joinMessage(Component.empty());
-        Game.sendInfo("§a➕ §7§oDer Spieler §7" + Main.toPlain(player.displayName()) + " §oist jetzt auf dem Server!", "§cServer");
+        Info.sendInfo("§a➕ §7§oDer Spieler §7" + Main.toPlain(player.displayName()) + " §oist jetzt auf dem Server!", "§cServer");
 
         if(!player.hasPermission(config.getString("permission.sbm.allow.behold-gamemode"))) {
             player.setGameMode(GameMode.ADVENTURE);
@@ -32,7 +34,7 @@ public class JoinListener implements Listener {
             if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
             if(!Game.getLivingPlayers().contains(player.getUniqueId().toString())) {
                 Game.setGameServerHotbar(player);
-                if(Game.isInTeam(player)) Main.setPlayerStatus(Status.DEAD, player);
+                if(TeamManager.isInTeam(player)) Main.setPlayerStatus(Status.DEAD, player);
                 else Main.setPlayerStatus(Status.WATCHING, player);
             } 
             if(Game.isRoundGoing) Game.bossBar.addPlayer(player);
@@ -44,15 +46,15 @@ public class JoinListener implements Listener {
 
         Main.updatePlayerStatus(player);
 
-        if(Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
-            Team team = Game.getTeamsPlayer().get(player.getUniqueId().toString());
+        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
+            Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
             if(!Game.leftTeamPlayers.contains(player.getUniqueId().toString()) &&
                     (Game.livingPlayersTeamRed.contains(player.getUniqueId().toString()) || Game.livingPlayersTeamBlue.contains(player.getUniqueId().toString()))) {
-                Game.sendInfo("Du musst diese Runde zuschauen!", player);
+                Info.sendInfo("Du musst diese Runde zuschauen!", player);
                 player.teleport(Main.arena.getSpawnLocation());
                 Game.getLivingPlayers(team).remove(player.getUniqueId().toString());
             }
-            Game.getTeamPlayers(team).add(player.getUniqueId().toString());
+            TeamManager.getTeamPlayers(team).add(player.getUniqueId().toString());
         }
     }
 }

@@ -1,7 +1,7 @@
 package de.dachente.sbm.commands;
 
 import de.dachente.sbm.main.Main;
-import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.enums.Server;
 
 import java.util.function.Consumer;
@@ -24,7 +24,7 @@ public class LobbyCommand implements CommandExecutor {
             return true;
         }
 
-        if(Game.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
+        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
             sendReply.accept("Du kannst das jetzt nicht tun!");
             return true;
         }
