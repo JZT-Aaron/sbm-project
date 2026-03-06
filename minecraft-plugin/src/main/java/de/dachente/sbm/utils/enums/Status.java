@@ -6,7 +6,9 @@ public enum Status {
     PLAYING("🗡"),
     WAITING("⏳"),
     PARKOURING("👟"),
-    INLOBBY("🚩");
+    INLOBBY("🚩"),
+    UNKOWN("❓"),
+    WON("🥇");
 
     private final String symbol; // String sstatt Character
 

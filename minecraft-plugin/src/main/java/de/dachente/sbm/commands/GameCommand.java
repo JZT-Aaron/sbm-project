@@ -5,8 +5,11 @@ import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.GameStat;
+import de.dachente.sbm.utils.GameStats;
 import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.GameState;
 
 import java.util.function.Consumer;
 
@@ -43,6 +46,12 @@ public class GameCommand implements CommandExecutor {
             return true;
         }
 
+        if(args[0].equalsIgnoreCase("test")) {
+            sendReply.accept("Before: " + GameStats.get(GameStat.STATE));
+            GameStats.set(GameStat.STATE, "Testing");
+            sendReply.accept("After: " + GameStats.get(GameStat.STATE));
+        }
+
         if(args[0].equalsIgnoreCase("open") && args.length == 1) {
             if(Game.isOpen()) {
                 sendReply.accept("§cDas Spiel ist schon offen!");
@@ -76,7 +85,7 @@ public class GameCommand implements CommandExecutor {
                 sendReply.accept("§cBitte benutze round start [now]");
             }
             if(args[1].equalsIgnoreCase("start")) {
-                if(Game.isRoundGoing) {
+                if(Game.isRunning()) {
                     sendReply.accept("§cDie Runde läuft schon!");
                     return true;
                 }   
@@ -92,7 +101,7 @@ public class GameCommand implements CommandExecutor {
 
         // When production add confirm
         if(args[0].equalsIgnoreCase("hard-reset")) {
-            if(!Game.isRoundGoing) {
+            if(!Game.isRunning()) {
                 sendReply.accept("§cDas Spiel läuft nicht!");
                 return true;
             }
@@ -131,22 +140,13 @@ public class GameCommand implements CommandExecutor {
         }
 
         if(args[0].equalsIgnoreCase("game-joining") && args.length == 2) {
-            boolean isOpen = false;
-
             if(!(args[1].equalsIgnoreCase("on") || args[1].equalsIgnoreCase("off"))) {
                 Info.sendInfo("Bitte nutzte nur §7on §ooder §7off§o.", SENDER_NAME, player);
                 return true;
             }
 
-            if(args[1].equalsIgnoreCase("on")) {
-                isOpen = true;
-            }
-
-            if(args[1].equalsIgnoreCase("off")) {
-                isOpen = false;
-            }
-
-            Game.isJoiningOpen = isOpen;
+            if(args[1].equalsIgnoreCase("on")) 
+                Game.setGameStatus(args[1].equalsIgnoreCase("on") ? GameState.OPEN : GameState.CLOSED);
         }
 
         if(args[0].equalsIgnoreCase("winner") && args.length == 2) {

@@ -1,13 +1,30 @@
 package de.dachente.sbm.managers;
 
+import java.time.Duration;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import de.dachente.sbm.utils.Game.TitleTime;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 
 public class Info {
+    public enum TitleTime {
+        SHORT(Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(1), Duration.ofMillis(500))),
+        NORMAL(Title.Times.times(Duration.ofMillis(700), Duration.ofSeconds(4), Duration.ofMillis(700))),
+        LONG(Title.Times.times(Duration.ofMillis(500), Duration.ofSeconds(20), Duration.ofMillis(500)));
+
+        private final Title.Times times;
+
+        TitleTime(Title.Times times) {
+            this.times = times;
+        }
+
+        public Title.Times getTimes() {
+            return times;
+        }
+    }
+
     public static void showTitle(String text, String subtitle, TitleTime titleTime, Player player) {
         player.showTitle(Title.title(Component.text(text), Component.text(subtitle), titleTime.getTimes()));
     }

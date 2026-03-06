@@ -1,7 +1,6 @@
 package de.dachente.sbm.managers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -11,11 +10,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.GameStat;
+import de.dachente.sbm.utils.GameStats;
 import de.dachente.sbm.utils.Team;
 
 public class TeamManager {
-
-    private static Map<String, Team> teamsPlayerUUIDs = new HashMap<>();
     
     public static void addPlayerTeam(String uuid) {
         Team team = null;
@@ -42,7 +41,9 @@ public class TeamManager {
         player.getInventory().clear();
         //Location teamSpawnLocation = null;
 
-        teamsPlayerUUIDs.put(uuid, team);
+        Map<String, Team> teamsPlayer = getTeamsPlayer(); 
+        teamsPlayer.put(uuid, team);
+        updateTeamsPlayers(teamsPlayer);
 
         player.teleport(team.getTeamSpawnLocation());
 
@@ -54,12 +55,14 @@ public class TeamManager {
     }
 
     public static void removePlayerTeam(String uuid) {
-        Team team = teamsPlayerUUIDs.get(uuid);
+        Map<String, Team> teamsPlayer = getTeamsPlayer(); 
+        Team team = teamsPlayer.get(uuid);
         if(team == null) return;
 
         Player player = Bukkit.getPlayer(UUID.fromString(uuid));
 
-        teamsPlayerUUIDs.remove(uuid);
+        teamsPlayer.remove(uuid);
+        updateTeamsPlayers(teamsPlayer);
 
         Game.setViewer(player);    
         Info.sendInfo("§oDu bist jetzt nicht mehr " + team.getChatColor() + team.getName() + "§7.", Bukkit.getPlayer(UUID.fromString(uuid)));
@@ -73,7 +76,11 @@ public class TeamManager {
     }
 
     public static Map<String, Team> getTeamsPlayer() {
-        return teamsPlayerUUIDs;
+        return GameStats.get(GameStat.TEAM_PLAYERS);
+    }
+
+    public static void updateTeamsPlayers(Map<String, Team> teamsPlayer) {
+        GameStats.set(GameStat.TEAM_PLAYERS, teamsPlayer);
     }
     
     public static List<String> getTeamPlayers(Team team) {
@@ -98,7 +105,7 @@ public class TeamManager {
     public static void splitTeam(Team team) {
         Team disbandingTeam = getOppositeTeam(team);
 
-        clearTeam(getOppositeTeam(disbandingTeam));
+        clearTeam(disbandingTeam);
         for(int i = 0; i < getTeamPlayers(team).size()/2; i++) {
             int playerId = new Random().nextInt(getTeamPlayers(team).size()-1);
             String uuid = getTeamPlayers(team).get(playerId+1);
@@ -114,6 +121,10 @@ public class TeamManager {
 
     public static Team getTeam(Player player) {
         return getTeamsPlayer().get(player.getUniqueId().toString());
+    }
+
+    public static Team getTeam(String uuid) {
+        return getTeamsPlayer().get(uuid);
     }
     
 }

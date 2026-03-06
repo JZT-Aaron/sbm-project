@@ -46,13 +46,18 @@ import de.dachente.sbm.tabs.InfoTab;
 import de.dachente.sbm.tabs.TeamTab;
 import de.dachente.sbm.tabs.VoidTab;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.GameRepeat;
+import de.dachente.sbm.utils.GameStats;
 import de.dachente.sbm.utils.Repeat;
+import de.dachente.sbm.utils.coms.BackendClient;
+import de.dachente.sbm.utils.coms.RedisEventPublisher;
+import de.dachente.sbm.utils.coms.RedisManager;
 import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Server;
-import de.dachente.sbm.utils.enums.SignFrame;
-import de.dachente.sbm.utils.enums.Status;
+import io.github.cdimascio.dotenv.Dotenv;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import redis.clients.jedis.Jedis;
 
 public final class Main extends JavaPlugin {
 
@@ -62,7 +67,10 @@ public final class Main extends JavaPlugin {
     public static NamespacedKey NO_MOVE;
     public static NamespacedKey TAG_KEY;
 
-    private static Map<String, Status> playerStatus = new HashMap<>();
+    private static BackendClient backendClient;
+    private static RedisEventPublisher redisEventPublisher;
+    private static RedisManager redisManager;
+    private static DatabaseManager dbManager;
 
     @Override
     public void onEnable() {
@@ -83,12 +91,24 @@ public final class Main extends JavaPlugin {
         NO_MOVE = new NamespacedKey(this, "no-move");
         TAG_KEY = new NamespacedKey(this, "tag-data");
 
-        Repeat.start();
-
         registerCommands();
         registerEvents();
         registerCameras();
         registerTeamGates();
+        loadBackendClient();
+
+        GameStats.init();
+
+        Repeat.start();
+        GameRepeat.start();
+
+        if(Game.isRunning()) {
+            Game.bossBar.setVisible(true);
+            for(Player eventServerPlayer : arena.getPlayers()) Game.bossBar.addPlayer(eventServerPlayer);
+            Game.updateTeamHearts();
+        }
+
+       for(Player all : Bukkit.getOnlinePlayers()) LanguageManager.addOnline(all.getUniqueId());
 
         getLogger().info("Plugin is started.");
     }
@@ -103,9 +123,55 @@ public final class Main extends JavaPlugin {
             armorStand.remove();
         }
 
-        Game.hardReset();
+        Game.bossBar.removeAll();
 
         getLogger().info("Plugin is stopped.");
+    }
+
+    private void loadBackendClient() {
+        Dotenv dotenv = Dotenv.configure().directory("/data/").load();
+        String backendUrl = dotenv.get("BACKEND_URL");
+        String apiKey = dotenv.get("BACKEND_API_KEY");
+
+        backendClient = new BackendClient(backendUrl, apiKey);
+        getLogger().info("BackendClient initialized: " + backendUrl);
+
+        String redisHost = dotenv.get("REDIS_HOST");
+        int redisPort = Integer.parseInt(dotenv.get("REDIS_PORT"));
+        String redisPasswort = dotenv.get("REDIS_PASSWORD");
+
+        Jedis jedis = new Jedis(redisHost, redisPort);
+        jedis.auth(redisPasswort);
+
+        redisEventPublisher = new RedisEventPublisher(jedis);
+        getLogger().info("RedisEventPublisher initialized: " + backendUrl);
+
+        redisManager = new RedisManager(redisHost, redisPort, redisPasswort);
+
+        String dbHost = dotenv.get("SQL_HOST");
+        int dbPort = Integer.parseInt(dotenv.get("SQL_PORT"));
+        String user = dotenv.get("SQL_USER");
+        String dbPasswort = dotenv.get("SQL_PASSWORD");
+        String dbDB = dotenv.get("SQL_DB");
+
+        dbManager = new DatabaseManager(dbHost, dbPort, dbDB, user, dbPasswort);
+    }
+
+
+    public static BackendClient getBackendClient() {
+        return backendClient;
+    }
+
+    public static RedisEventPublisher getRedisEventPublisher() {
+        return redisEventPublisher;
+    }
+
+    public static RedisManager getRedisManager() {
+        return redisManager;
+    }
+
+    public static DatabaseManager getDbManager() {
+        return dbManager;
     }
 
     private void registerCommands() {
@@ -262,33 +328,17 @@ public final class Main extends JavaPlugin {
 
     // Player Status
 
-    public static Status getPlayerStatus(Player player) {
-        return playerStatus.get(player.getUniqueId().toString());
-    }
-
-    public static void setPlayerStatus(Status status, Player player) {
-        playerStatus.remove(player.getUniqueId().toString());
-        playerStatus.put(player.getUniqueId().toString(), status);
-        updatePlayerStatus(status, player);
-    }
-
-    public static void updatePlayerStatus(Player player) {
-        updatePlayerStatus(getPlayerStatus(player), player);
-    }    
-
-    private static void updatePlayerStatus(Status status, Player player) {
-        String playerColor = TeamManager.isInTeam(player) ? TeamManager.getTeam(player).getChatColor() : "§f";
-        player.playerListName(Component.text(" " + status.getSymbol() + " §7| " + playerColor + toPlain(player.displayName())));
-    }
 
     public static void joinServer(Server server, Player player, boolean keepPosition) {
         Game.setServerHotbar(server, player);
-        setPlayerStatus(server.getStatus(), player);
+        StatusManger.setPlayerStatus(server.getStatus(), player);
         if(!keepPosition) player.teleport(server.getWorld().getSpawnLocation());
         if(server == Server.EVENT_SERVER) {
-            if(Game.isRoundGoing) {
+            if(Game.isRunning()) {
                 if(!Game.bossBar.getPlayers().contains(player)) Game.bossBar.addPlayer(player);
             } 
+        } else {
+            Game.bossBar.removePlayer(player);
         }
     }
 }

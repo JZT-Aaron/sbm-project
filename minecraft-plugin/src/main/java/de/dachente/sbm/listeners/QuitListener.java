@@ -24,10 +24,9 @@ public class QuitListener implements Listener {
             Game.bossBar.removePlayer(player);
         }
 
-        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
-            Game.leftTeamPlayers.add(player.getUniqueId().toString());
-            Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
-            Game.getLivingPlayers(team).remove(player.getUniqueId().toString());
+        if(TeamManager.getTeamsPlayer().containsKey(uuid)) {
+            Game.leftTeamPlayers.add(uuid);
+            Game.removeFromLivingPlayers(uuid);
         }
 
 

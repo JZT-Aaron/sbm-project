@@ -34,8 +34,8 @@ public class JoinListener implements Listener {
             if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
             if(!Game.getLivingPlayers().contains(player.getUniqueId().toString())) {
                 Game.setGameServerHotbar(player);
-                if(TeamManager.isInTeam(player)) Main.setPlayerStatus(Status.DEAD, player);
-                else Main.setPlayerStatus(Status.WATCHING, player);
+                if(TeamManager.isInTeam(player)) StatusManger.setPlayerStatus(Status.DEAD, player);
+                else StatusManger.setPlayerStatus(Status.WATCHING, player);
             } 
             if(Game.isRoundGoing) Game.bossBar.addPlayer(player);
         }
@@ -44,17 +44,16 @@ public class JoinListener implements Listener {
             Main.joinServer(Server.LOBBY, player, true);
         }
 
-        Main.updatePlayerStatus(player);
+        StatusManger.updatePlayerStatus(player);
 
-        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
-            Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
-            if(!Game.leftTeamPlayers.contains(player.getUniqueId().toString()) &&
-                    (Game.livingPlayersTeamRed.contains(player.getUniqueId().toString()) || Game.livingPlayersTeamBlue.contains(player.getUniqueId().toString()))) {
+        if(TeamManager.getTeamsPlayer().containsKey(uuid)) {
+            Team team = TeamManager.getTeamsPlayer().get(uuid);
+            if(!Game.leftTeamPlayers.contains(uuid) && Game.getLivingPlayers().containsKey(uuid)) {
                 Info.sendInfo("Du musst diese Runde zuschauen!", player);
                 player.teleport(Main.arena.getSpawnLocation());
-                Game.getLivingPlayers(team).remove(player.getUniqueId().toString());
+                Game.removeFromLivingPlayers(null);
             }
-            TeamManager.getTeamPlayers(team).add(player.getUniqueId().toString());
+            TeamManager.getTeamPlayers(team).add(uuid);
         }
     }
 }

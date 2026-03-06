@@ -2,9 +2,11 @@ package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.ItemBuilder;
+import de.dachente.sbm.utils.enums.GameState;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -40,8 +42,7 @@ public class InteractListener implements Listener {
         }
 
         if(id.equalsIgnoreCase("join-team")) {
-            event.setCancelled(true);
-            if(!Game.isJoiningOpen) {
+            if(!Game.state().equals(GameState.OPEN)) {
                 Info.sendInfo("Du kannst nicht mehr Teilnehmen!", player);
                 return;
             }
@@ -52,6 +53,11 @@ public class InteractListener implements Listener {
 
         if(id.equalsIgnoreCase("open-camera-views")) {
             Game.openCameraViews(player);
+            return;
+        }
+
+        if(id.equalsIgnoreCase("open-change-language")) {
+            LanguageManager.openLanguageMenu(player);
             return;
         }
 

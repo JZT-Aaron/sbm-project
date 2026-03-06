@@ -26,7 +26,7 @@ public class GameTab implements TabCompleter {
                 tab.add("close");
             } else
                 tab.add("open");
-            if(Game.isRoundGoing) {
+            if(Game.isRunning()) {
                 tab.add("stop");
             }
             tab.add("round");
@@ -48,7 +48,7 @@ public class GameTab implements TabCompleter {
             }
             if(args[0].equalsIgnoreCase("dead")) {
                 for(Player all : Bukkit.getOnlinePlayers()) {
-                    if(!Game.getLivingPlayers().contains(all.getUniqueId().toString())) continue;
+                    if(!Game.getLivingPlayers().containsKey(all.getUniqueId().toString())) continue;
                     tab.add(all.getName());
                 }
             }

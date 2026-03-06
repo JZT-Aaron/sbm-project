@@ -5,6 +5,7 @@ import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.Team;
+
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
@@ -17,8 +18,8 @@ public class DamageByEntityListener implements Listener {
     public void onDamage(EntityDamageByEntityEvent event) {
         if(!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
-        if(player.getWorld().equals(Main.lobby) || !TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()) || !Game.isRoundGoing
-                || (!Game.livingPlayersTeamBlue.contains(player.getUniqueId().toString()) && !Game.livingPlayersTeamRed.contains(player.getUniqueId().toString()))) {
+        if(player.getWorld().equals(Main.lobby) || !TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()) ||   
+            !Game.isRunning() || !Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) {
             event.setCancelled(true);
             return;
         }
@@ -43,7 +44,7 @@ public class DamageByEntityListener implements Listener {
             return;
         }
 
-        if(Game.isRoundGoing && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
+        if(Game.isRunning() && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
             Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§owurde von " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogetroffen.");
             if(player.getHealthScale() <= 2) {
                 Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§oist durch " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogestorben.");

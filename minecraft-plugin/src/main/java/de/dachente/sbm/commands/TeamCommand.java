@@ -29,6 +29,11 @@ public class TeamCommand implements CommandExecutor {
             return true;
         }
 
+        if(args[0].equalsIgnoreCase("data")) {
+            sendReply.accept("Current Team data: " + TeamManager.getTeamsPlayer());
+            return true;
+        }
+
         boolean isTeamNeeded = (args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("clear"));
 
         int playerState = -10;
@@ -75,6 +80,7 @@ public class TeamCommand implements CommandExecutor {
         }
 
         if(args[0].equalsIgnoreCase("clear")) {
+            sendReply.accept("[Debug] " + TeamManager.getTeamPlayers(team));
             if(TeamManager.getTeamPlayers(team).size() <= 0) {
                 sendReply.accept("§c§oDas §7Team §oist bereits §cleer§o!");
                 return true;

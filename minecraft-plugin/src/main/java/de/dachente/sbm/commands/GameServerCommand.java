@@ -20,7 +20,7 @@ public class GameServerCommand implements CommandExecutor {
             return true;
         }
 
-        if(Game.getLivingPlayers().contains(player.getUniqueId().toString()) && !player.isOp()) {
+        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && !player.isOp()) {
             Info.sendInfo("Du kannst das jetzt nicht tun!", player);
             return true;
         }
