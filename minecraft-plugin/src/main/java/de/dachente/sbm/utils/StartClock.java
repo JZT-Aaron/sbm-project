@@ -1,13 +1,13 @@
 package de.dachente.sbm.utils;
 
+import de.dachente.sbm.listeners.MutliLangSignManager;
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.Info;
-import net.kyori.adventure.text.Component;
+import de.dachente.sbm.managers.LanguageManager;
+import static de.dachente.sbm.managers.LanguageManager.getText;
 
 import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
-import org.bukkit.block.sign.Side;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
@@ -18,35 +18,38 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class StartClock {
 
     static int taskID;
 
     static FileConfiguration config = Main.getPlugin().getConfig();
-    static final String NAME = "Event Server";
-    public static boolean isRoundGoing = false;
+    public static boolean isTimerStarted = false;
 
     public static final String NO_DATE_AVAILABLE = "§7§oN/A";
     private final static String SIGN_LINE = "§f§l--------------";
     public static String openDateDiffrenceText = NO_DATE_AVAILABLE;
 
-    public static List<Block> signs = new ArrayList<>(List.of(
-                Main.lobby.getBlockAt(43, -5, 4),
-                Main.lobby.getBlockAt(43, -5, 6),
-                Main.lobby.getBlockAt(-4, 1, 49),
-                Main.lobby.getBlockAt(-45, 0, 8),
-                Main.lobby.getBlockAt(-5, 1, -33),
-                Main.lobby.getBlockAt(-13, 0, 6),
-                Main.lobby.getBlockAt(-13, 0, 2)));
+
+    private static int y;
+    private static int M;
+    private static int d;
+    private static int h;
+    private static int m;
+    private static int s;
+
+    public static List<Location> signs = new ArrayList<>();
 
     public static void stop() {
-        isRoundGoing = false;
+        isTimerStarted = false;
         Bukkit.getScheduler().cancelTask(taskID);
     }
 
+    //TODO: Test if that Text System works.
+
     public static void start() {
-        isRoundGoing = true;
+        isTimerStarted = true;
 
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             @Override
@@ -66,36 +69,18 @@ public class StartClock {
                 Period period = Period.between(now.toLocalDate(), targetDateTime.toLocalDate());
                 Duration duration = Duration.between(now, targetDateTime); 
 
-                int y = period.getYears();
-                int M = period.getMonths();
-                int d = period.getDays();
-                int h = duration.toHoursPart();
-                int m = duration.toMinutesPart();
-                int s = duration.toSecondsPart();
+                y = period.getYears();
+                M = period.getMonths();
+                d = period.getDays();
+                h = duration.toHoursPart();
+                m = duration.toMinutesPart();
+                s = duration.toSecondsPart();
 
-                StringBuilder timeBuilder = new StringBuilder();
                 if(duration.toHours() < 24) d = 0;
 
-                if (y > 0) timeBuilder.append(y).append(" J. ");
-                if (M > 0) timeBuilder.append(M).append(" M. ");
-                timeBuilder.append(d).append(timeBuilder.length() < 11 ? " Tage " : " T. ");
-                
-
-                String dateDiffrence = timeBuilder.toString().trim();
-                dateDiffrence = dateDiffrence.isEmpty() ? "§7§oHeute!!" : "§7§o" + dateDiffrence;
-
-                String timeDiffrence = String.format("%02d:%02d:%02d", h, m, s);
-
-                openDateDiffrenceText = (dateDiffrence + " ◆ " + timeDiffrence).trim();
-
-                for(Player all : Main.lobby.getPlayers()) Game.setLobbyHotbar(all);
-                
-                setSignsText(
-                    "§a" + NAME, 
-                    "§f§l---§7Öffnung:§f§l---", 
-                    dateDiffrence, 
-                    "§7§o" + timeDiffrence);
-
+                for(Player all : Main.lobby.getPlayers()) {
+                    updateTimeDisplay(all, false);
+                } 
                 
                 boolean isOpeningToday = period.isZero() || period.isNegative();
 
@@ -145,26 +130,77 @@ public class StartClock {
         },0,20);
     }
 
-    public static void setSignsInfo(String info) {
-        setSignsText(
+    private static void sendCountdownMessage(int time, String unitId) {
+        String timeString = time + ""; 
+
+        if(time == 1) {
+            timeString = "@unit.one";
+            unitId.replace("s", "");
+        }
+        Info.sendLangInfo("server-open-countdown", "%server%", "@instances.game-server", "%time%", timeString, "%unit%", "unit." + unitId);
+    }
+
+    public static void updateTimeDisplay(Player player, boolean ignoreDis) {
+        StringBuilder timeBuilder = new StringBuilder();     
+
+        if (y > 0) timeBuilder.append(y).append(" Y. ");
+        if (M > 0) timeBuilder.append(M).append(" M. ");
+        
+        UUID uuid = player.getUniqueId();
+        StringBuilder timeBuilderClone = new StringBuilder(timeBuilder.toString());
+        if(d > 0) timeBuilderClone.append(d).append(timeBuilderClone.length() < 11 ? " "+ getText("info.time.days", uuid) +" " : " "+ getText("info.time.days-abb", uuid) +" ");
+    
+        String dateDiffrence = timeBuilderClone.toString().trim();
+        dateDiffrence = dateDiffrence.isEmpty() ? "§7§o" + getText("info.time.today", uuid) : "§7§o" + dateDiffrence;
+
+        String timeDiffrence = String.format("%02d:%02d:%02d", h, m, s);
+
+        openDateDiffrenceText = (dateDiffrence + " ◆ " + timeDiffrence).trim();
+
+        Game.updateJoinGameItem(player);
+        
+        setSignsText(player, ignoreDis,
+        "§b" + getGameServerName(uuid), 
+        "§f§l-- §7" + getText("state.opening", uuid) + "§f§l --", 
+        dateDiffrence, 
+        "§7§o" + timeDiffrence);
+    }
+
+    public static void setSignsInfo(String infoID, String color) {
+        setSignsInfo(infoID, color, false);
+    }
+
+    public static void setSignsInfo(String infoID, String color, boolean ignoreDis) {
+        for(Player all : Main.lobby.getPlayers()) {
+            UUID uuid = all.getUniqueId();
+            setSignsText(all, ignoreDis,
             SIGN_LINE, 
-            "§a" + NAME, 
-            info, 
+            "§b" + getGameServerName(uuid), 
+            color + getText(infoID, uuid), 
             SIGN_LINE);
     }
 
-    public static void setSignsText(String line1, String line2, String line3, String line4) {
-        for (Block signBlock : signs) {
-            Sign sign = (Sign) signBlock.getState();
-            var frontSide = sign.getSide(Side.FRONT);
+    }
 
-            frontSide.line(0, Component.text(line1));
-            frontSide.line(1, Component.text(line2));
-            frontSide.line(2, Component.text(line3));
-            frontSide.line(3, Component.text(line4));
+    private static String getGameServerName(UUID uuid) {
+        return LanguageManager.getText("instances.game-server", uuid);
+    }
 
-            sign.update();
+    public static void setSignsText(Player player, boolean ignoreDis, String... lines) {   
+        for (Location signBlockLoc : signs) {
+            if(!ignoreDis && (!signBlockLoc.getWorld().equals(player.getWorld()) || signBlockLoc.distanceSquared(player.getLocation()) > 4096)) continue;
+            MutliLangSignManager.sendSign(player, signBlockLoc, lines);
         }
+    }
+
+    public static void updateSigns() {
+        for(Player all : Main.lobby.getPlayers()) updateSigns(all, false);
+    }
+
+    public static void updateSigns(Player player, boolean ignoreDis) {
+        if(Game.isOpen()) StartClock.setSignsInfo("state.open", "§a§o", ignoreDis);
+        else if(isTimerStarted) StartClock.updateTimeDisplay(player, ignoreDis);
+        else StartClock.setSignsInfo("state.closed", "§c§o", ignoreDis);
     }
 
     private static boolean isBetween(int input, int val1, int val2) {
