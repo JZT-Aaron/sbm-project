@@ -90,15 +90,12 @@ public class StartClock {
                 }
 
                 if (isOpeningToday && isBetween(h, 1, 9) && m+s == 0) {
-                    Info.sendInfo(NAME + " öffnet in §7" + h + " §oStunden!");
+                    sendCountdownMessage(h, "hours");
                 }
                 if (isOpeningToday && h+s == 0 && m != 0) {
                     switch (m) {
-                        case 60: case 50: case 40: case 30: case 20: case 10: case 5: case 3: case 2:
-                            Info.sendInfo(NAME + " öffnet in §7" + m + " §oMinuten!");
-                            break;
-                        case 1:
-                            Info.sendInfo(NAME + " öffnet in §7einer §oMinute!");
+                        case 60: case 50: case 40: case 30: case 20: case 10: case 5: case 3: case 2: case 1:
+                            sendCountdownMessage(m, "mins");
                             break;
                         default:
                             return;
@@ -108,18 +105,11 @@ public class StartClock {
                 if (isOpeningToday && h+m == 0 && s != 0) {
                     switch (s) {
                         case 60: case 50: case 40: case 30: case 20: case 10: case 5:
-                            Info.sendInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
+                            sendCountdownMessage(s, "secs");
                             break;
-                        case 3: case 2:
-                            for (Player all : Bukkit.getOnlinePlayers()) {
-                                Info.showTitle("§c§l" + s, all);
-                                Info.sendImportantInfo(NAME + " öffnet in §7" + s + " §oSekunden!");
-                            }
-                            break;
-                        case 1:
-                            for (Player all : Bukkit.getOnlinePlayers())
-                                Info.showTitle("§c§l" + s, all);
-                            Info.sendImportantInfo(NAME + " öffnet in §7einer §oSekunden!");
+                        case 3: case 2: case 1:
+                            for(Player all : Bukkit.getOnlinePlayers()) Info.showTitle("§b§l" + s, all);
+                                sendCountdownMessage(s, "secs");
                             break;
                         default:
                             return;
@@ -178,8 +168,8 @@ public class StartClock {
             "§b" + getGameServerName(uuid), 
             color + getText(infoID, uuid), 
             SIGN_LINE);
-    }
-
+        }
+        
     }
 
     private static String getGameServerName(UUID uuid) {

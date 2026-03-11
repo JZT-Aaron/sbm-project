@@ -1,22 +1,17 @@
 package de.dachente.sbm.main;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -28,6 +23,7 @@ import de.dachente.sbm.commands.GameServerCommand;
 import de.dachente.sbm.commands.InfoCommand;
 import de.dachente.sbm.commands.LobbyCommand;
 import de.dachente.sbm.commands.TeamCommand;
+import de.dachente.sbm.listeners.AsyncPlayerPreLoginListener;
 import de.dachente.sbm.listeners.BlockBreakListener;
 import de.dachente.sbm.listeners.BlockRedstoneHandler;
 import de.dachente.sbm.listeners.DamageByEntityListener;
@@ -37,10 +33,14 @@ import de.dachente.sbm.listeners.InventoryClickListener;
 import de.dachente.sbm.listeners.ItemDropListener;
 import de.dachente.sbm.listeners.JoinListener;
 import de.dachente.sbm.listeners.MoveListener;
+import de.dachente.sbm.listeners.MutliLangSignManager;
 import de.dachente.sbm.listeners.PlayerToggleSnakeListener;
 import de.dachente.sbm.listeners.QuitListener;
 import de.dachente.sbm.listeners.SnowballHitListener;
+import de.dachente.sbm.managers.BossBarManager;
 import de.dachente.sbm.managers.GateManager;
+import de.dachente.sbm.managers.LanguageManager;
+import de.dachente.sbm.managers.StatusManger;
 import de.dachente.sbm.tabs.GameTab;
 import de.dachente.sbm.tabs.InfoTab;
 import de.dachente.sbm.tabs.TeamTab;
@@ -49,7 +49,9 @@ import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.GameRepeat;
 import de.dachente.sbm.utils.GameStats;
 import de.dachente.sbm.utils.Repeat;
+import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.coms.BackendClient;
+import de.dachente.sbm.utils.coms.DatabaseManager;
 import de.dachente.sbm.utils.coms.RedisEventPublisher;
 import de.dachente.sbm.utils.coms.RedisManager;
 import de.dachente.sbm.utils.enums.Language;
@@ -72,13 +74,20 @@ public final class Main extends JavaPlugin {
     private static RedisManager redisManager;
     private static DatabaseManager dbManager;
 
+    public static List<Player> resendLobbySigns = new ArrayList<>();
+
     @Override
     public void onEnable() {
         getLogger().info("Plugin is starting ...");
 
         plugin = this;
         saveDefaultConfig();
-        loadLang();
+        for(Language lang : Language.values()) {
+            saveResource("lang/lang_" + lang.getFileName() + ".yml", true);
+        }
+        
+        LanguageManager.loadLang();
+        MutliLangSignManager.registerListener();
 
         new WorldCreator(Server.EVENT_SERVER.getWorldName()).createWorld();
 
@@ -96,20 +105,21 @@ public final class Main extends JavaPlugin {
         registerCameras();
         registerTeamGates();
         loadBackendClient();
+        registerEventInfoSigns();
 
         GameStats.init();
 
         Repeat.start();
         GameRepeat.start();
 
+        for(Player all : Bukkit.getOnlinePlayers()) LanguageManager.addOnlineSnyc(all.getUniqueId());
+
         if(Game.isRunning()) {
-            Game.bossBar.setVisible(true);
-            for(Player eventServerPlayer : arena.getPlayers()) Game.bossBar.addPlayer(eventServerPlayer);
+            BossBarManager.setVisible(true);
+            for(Player eventServerPlayer : arena.getPlayers()) BossBarManager.addPlayer(eventServerPlayer);
             Game.updateTeamHearts();
         }
-
-       for(Player all : Bukkit.getOnlinePlayers()) LanguageManager.addOnline(all.getUniqueId());
-
+       
         getLogger().info("Plugin is started.");
     }
 
@@ -118,12 +128,15 @@ public final class Main extends JavaPlugin {
         getLogger().info("Plugin is stopping ...");
 
         Repeat.stop();
+        GameRepeat.stop();
+
+        if(dbManager != null) dbManager.close();
 
         for(ArmorStand armorStand : Game.cameraPoints) {
             armorStand.remove();
         }
 
-        Game.bossBar.removeAll();
+        BossBarManager.removeAll();
 
         getLogger().info("Plugin is stopped.");
     }
@@ -211,6 +224,7 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new SnowballHitListener(), this);
 
         pluginManager.registerEvents(new JoinListener(), this);
+        pluginManager.registerEvents(new AsyncPlayerPreLoginListener(), this);
         pluginManager.registerEvents(new QuitListener(), this);
     }
 
@@ -226,8 +240,6 @@ public final class Main extends JavaPlugin {
         ConfigurationSection barrierSection = getConfig().getConfigurationSection("gates-pos.barriers");
         ConfigurationSection signSection = getConfig().getConfigurationSection("gates-pos.signs");
         
-        
-
         for(String key : plateSection.getKeys(false)) {
             List<Location> plateLocations = parseList(plateSection.getString(key));
             List<Location> barrierLocations = parseList(barrierSection.getString(key));
@@ -252,6 +264,10 @@ public final class Main extends JavaPlugin {
         GateManager.setSigns(blueSigns, redSigns);
     }
 
+    private void registerEventInfoSigns() {
+        StartClock.signs = parseList(getConfig().getString("server-open-signs"), lobby);
+    }
+
     private Location getMirrorLocation(Location loc) {
         Location mirror = loc.clone();
         mirror.setZ(mirror.getZ()*-1);
@@ -259,35 +275,21 @@ public final class Main extends JavaPlugin {
     }
 
     private List<Location> parseList(String string) {
+        return parseList(string, arena);
+    }
+
+    private List<Location> parseList(String string, World world) {
         List<Location> locations = new ArrayList<>();
         String[] locs = string.split(";");
         for(String loc : locs) {
             Double[] cords = Arrays.stream(loc.split(","))
                 .map(Double::valueOf)
                 .toArray(Double[]::new);
-            Location l = new Location(arena, cords[0], cords[1], cords[2]);
+            Location l = new Location(world, cords[0], cords[1], cords[2]);
             locations.add(l);
         }
         return locations;
     }
-
-    private void loadLang() {
-        for(Language lang : Language.values()) {
-            lang.setFile(getLangFile(lang.getFileName()));
-        }
-    }
-
-    private FileConfiguration getLangFile(String lang) {    
-        String path = "lang/lang_" + lang + ".yml";
-        File file = new File(getDataFolder(), path);
-        
-        if(!file.exists()) {
-            saveResource(path, false);
-        }
-
-        return YamlConfiguration.loadConfiguration(file);
-    }
-
 
     private void registerCameras() {
         ArmorStand cameraUp = (ArmorStand) arena.spawnEntity(new Location(arena, 0, 22, 0, 180, 90), EntityType.ARMOR_STAND);
@@ -314,10 +316,6 @@ public final class Main extends JavaPlugin {
         return plugin;
     }
 
-    public static Consumer<String> getCmdReplyConsumer(String senderName, Player player) {
-        return msg -> Info.sendInfo(msg, senderName, player);
-    }
-
     public static String toPlain(Component component) {
         return PlainTextComponentSerializer.plainText().serialize(component);
     }
@@ -326,19 +324,21 @@ public final class Main extends JavaPlugin {
         joinServer(server, player, false);
     }
 
-    // Player Status
-
-
     public static void joinServer(Server server, Player player, boolean keepPosition) {
         Game.setServerHotbar(server, player);
         StatusManger.setPlayerStatus(server.getStatus(), player);
         if(!keepPosition) player.teleport(server.getWorld().getSpawnLocation());
         if(server == Server.EVENT_SERVER) {
+            MutliLangSignManager.customSigns.remove(player.getUniqueId());
             if(Game.isRunning()) {
-                if(!Game.bossBar.getPlayers().contains(player)) Game.bossBar.addPlayer(player);
+                if(!BossBarManager.containsPlayer(player)) BossBarManager.addPlayer(player);  
             } 
         } else {
-            Game.bossBar.removePlayer(player);
+            if(Server.LOBBY == server) { Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> 
+                                        StartClock.updateSigns(player, true), 10L);
+                resendLobbySigns.add(player);
+            }
+            BossBarManager.removePlayer(player);
         }
     }
 }

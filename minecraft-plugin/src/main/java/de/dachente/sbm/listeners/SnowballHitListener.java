@@ -2,7 +2,8 @@ package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.TeamManager;
-import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.Team;
+
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;

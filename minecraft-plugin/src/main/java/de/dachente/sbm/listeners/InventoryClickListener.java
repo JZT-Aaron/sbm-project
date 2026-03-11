@@ -1,9 +1,14 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.ItemBuilder;
+import de.dachente.sbm.utils.enums.Language;
 import net.kyori.adventure.text.Component;
+
+import static de.dachente.sbm.managers.LanguageManager.getText;
+
 import org.bukkit.GameMode;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -11,7 +16,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-
 public class InventoryClickListener implements Listener {
 
     @EventHandler
@@ -37,10 +41,17 @@ public class InventoryClickListener implements Listener {
                 if(!Main.toPlain(armorStand.customName()).equalsIgnoreCase(cameraId)) continue;
                 player.setGameMode(GameMode.SPECTATOR);
                 player.setSpectatorTarget(armorStand);
-                player.sendActionBar(Component.text("§7§oSneke um zu verlassen."));
+                player.sendActionBar(Component.text("§7§o" +  getText("info.sneak-to-leave", player.getUniqueId())));
             }
             player.closeInventory();
             return;
+        }
+
+        if(id.contains("select-lang-")) {
+            Language lang = Language.valueOf(id.replace("select-lang-", ""));
+            if(LanguageManager.hasLanguage(player.getUniqueId(), lang)) return;
+            LanguageManager.setLanguage(player, lang);
+            LanguageManager.openLanguageMenu(player);
         }
     }
 }

@@ -14,7 +14,7 @@ import de.dachente.sbm.utils.enums.Language;
 
 
 public class PlayerStats {
-    public static void createPlayer(UUID uuid, String name) {
+    public static void createPlayerSync(UUID uuid, String name) {
         String defaultLang = Language.EN.toString();
 
         String sql = "INSERT INTO players (uuid, playername, language, last_login, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
@@ -33,7 +33,7 @@ public class PlayerStats {
         }
     }
 
-    public static void loggedIn(UUID uuid) {
+    public static void loggedInSync(UUID uuid) {
         String sql = "UPDATE players SET last_login = CURRENT_TIMESTAMP where uuid = ?;";
         Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(), () -> {
             try(Connection conn = Main.getDbManager().getConnection();
@@ -49,24 +49,32 @@ public class PlayerStats {
     }
 
     public static CompletableFuture<Language> getLanguage(UUID uuid) {
-        String sql = "SELECT language from players where uuid = ?";
-        CompletableFuture<Language> future = new CompletableFuture<>(); 
+        CompletableFuture<Language> future = new CompletableFuture<>();
         Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(), () -> {
-            try(Connection conn = Main.getDbManager().getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-                stmt.setObject(1, uuid);
-
-                try(ResultSet rs = stmt.executeQuery()) {
-                    if(!rs.next()) future.complete(null) ;
-                    future.complete(Language.valueOf(rs.getString("language")));
-                }
-                stmt.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-            }
+            future.complete(getLanguageSync(uuid));
         });
         return future;
+    }
+
+    public static Language getLanguageSync(UUID uuid) {
+        String sql = "SELECT language from players where uuid = ?";
+        Language language = null;
+        
+        try(Connection conn = Main.getDbManager().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setObject(1, uuid);
+
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(!rs.next()) return null;
+                language = Language.valueOf(rs.getString("language"));
+            }
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return language;
     }
 
     public static void updateLang(UUID uuid, Language lang) {
@@ -85,24 +93,22 @@ public class PlayerStats {
         });
     }
     
-    public static CompletableFuture<Boolean> containsPlayer(UUID uuid) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-
+    public static boolean containsPlayerSync(UUID uuid) {
         String sql = "SELECT 1 FROM players WHERE uuid = ? LIMIT 1;";
-        Bukkit.getScheduler().runTaskAsynchronously(Main.getPlugin(), () -> {
-            try (Connection conn = Main.getDbManager().getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
-                    stmt.setObject(1, uuid);
+        boolean containsPlayer = false;
 
-                try (ResultSet rs = stmt.executeQuery()) {
-                        future.complete(rs.next());
-                }
-                stmt.close();
-            } catch (SQLException e) {
-                e.printStackTrace();;
-                future.complete(false);
+        try (Connection conn = Main.getDbManager().getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setObject(1, uuid);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                containsPlayer = rs.next();
             }
-        });
-        return future;
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();;
+            return false;
+        }
+        return containsPlayer;
     }
 }

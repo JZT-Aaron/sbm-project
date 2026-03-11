@@ -1,20 +1,19 @@
 package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.BossBarManager;
 import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.LanguageManager;
+import de.dachente.sbm.managers.StatusManger;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Server;
 import de.dachente.sbm.utils.enums.Status;
+import de.dachente.sbm.utils.enums.Team;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.title.Title;
-
 
 import org.bukkit.*;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -28,7 +27,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -44,7 +42,6 @@ public class Game {
     
     public static List<String> leftTeamPlayers = new ArrayList<>();
     public static List<ArmorStand> cameraPoints = new ArrayList<>();
-    public static BossBar bossBar = Bukkit.createBossBar("§7§lLaden ...", BarColor.WHITE, BarStyle.SOLID);
 
     public static int blueHearts = 0;
     public static int redHearts = 0;
@@ -60,9 +57,9 @@ public class Game {
 
         UUID uuid = player.getUniqueId();
 
-        ItemStack leaveTeam = new ItemBuilder(Material.RED_BED).setDisplayName("§7§lTeam verlassen").setTagData("leave-team")
-                .setLore("§7Betätige um dein Team zu verlassen").build();
+        ItemStack leaveTeam = new ItemBuilder(Material.RED_BED).setLangNameDescriptionTag("leave-team", uuid).setUnmovable().build();
         player.getInventory().setItem(8, leaveTeam);
+        player.getInventory().setItem(7, LanguageManager.getLanguageChangeItem(uuid));
     }
 
     public static void setViewer(Player player) {
@@ -86,45 +83,44 @@ public class Game {
         for(Player player : Main.lobby.getPlayers()) {
             setLobbyHotbar(player);
         }
-        StartClock.setSignsInfo("§a§oOffen");
+        StartClock.updateSigns();
         StartClock.openDateDiffrenceText = StartClock.NO_DATE_AVAILABLE;
-        Info.sendImportantInfo("Der Spiel-Server hat jetzt geöffnet! Ihr könnt über das Menü oder mit /game-server joinen.");
+        Info.sendLangImportantInfo("game-server-open");
     }
 
     public static void close() {
         config.set("game.open", false);
         Main.getPlugin().saveConfig();
         
-        StartClock.setSignsInfo("§c§oGeschlossen");
+        StartClock.updateSigns();
         StartClock.openDateDiffrenceText = StartClock.NO_DATE_AVAILABLE;
-        for(Player all : Main.arena.getPlayers()) all.teleport(Main.lobby.getSpawnLocation());
+        for(Player all : Main.arena.getPlayers()) Main.joinServer(Server.LOBBY, all);
         for(Player all : Bukkit.getOnlinePlayers()) setLobbyHotbar(all);
         Info.sendImportantInfo("Der Spiel-Server wurde geschlossen!");
     }
 
     public static void startTimer() {
         setGameStatus(GameState.STARTING);
-        Info.sendImportantInfo("§c§oDas Spiel startet in 5 sek!");
+        Info.sendLangImportantInfo("timer.gate-timer-start", "%sec%", "§b5");
+        Info.showLangTitle("gate-open-countdown");
         for(Player all : Bukkit.getOnlinePlayers()) {
-            Info.showTitle("§7Tore öffnen in: ", all);
+            all.getInventory().clear();
         }
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 5;
             @Override
             public void run() {
                     if(timer <= 0) {
-                        for(Player all : Bukkit.getOnlinePlayers()) {
-                            all.playSound(all.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 5, 1);
-                            Info.showTitle("§7Tore offen! ", "Verteilt euch", all);
-                        }
+                        Info.showLangTitle("gate-open");
+                        for(Player all : Bukkit.getOnlinePlayers()) all.playSound(all.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 5, 1);
+                        
                         Bukkit.getScheduler().cancelTask(taskID);
                         startSpreadTimer();
                     } else {
-                        for(Player all : Bukkit.getOnlinePlayers()) {
-                            Info.showTitle("§7§o" + timer, "Macht euch bereit", all);
-                            all.playSound(all.getLocation(), Sound.BLOCK_NOTE_BLOCK_SNARE, 5, 10);
-                        }   
-                        Info.sendInfo(timer + "");
+                        Info.showLangTitle("get-ready-timer", "%sec%", timer + "");
+                        for(Player all : Bukkit.getOnlinePlayers()) all.playSound(all.getLocation(), Sound.BLOCK_NOTE_BLOCK_SNARE, 5, 10);
+                        
+                        //Info.sendLangInfo("timer.gate-open-countdown", "%sec%", "§b" + timer);
                     }
                     timer--;
                 }
@@ -133,29 +129,30 @@ public class Game {
 
     public static void startSpreadTimer() {
         GateManager.setGateActive(true);
-        Info.sendImportantInfo("§c§oDas Spiel startet! §7§oIhr hab 10 sek um euch auf dem Spielfeld zu verteilen!");
+        Info.sendLangImportantInfo("timer.spread-timer-start", "%sec%", "§b10");
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 10;
             @Override
             public void run() {
                 if(timer <= 0) {
-                    Info.sendImportantInfo("§c§oEs geht los!");
+                    Info.sendLangImportantInfo("timer.game-start");
                     Bukkit.getScheduler().cancelTask(taskID);
+                    Info.showLangTitle("fire-at-will");
                     for(Player all : Bukkit.getOnlinePlayers()) {
-                        Info.showTitle("§7Start!", "§7Das Feuer ist eröffnet!", all);
                         all.playSound(all.getLocation(), Sound.EVENT_RAID_HORN, 10, 1);
                     }
-                    
                     beginRound();
                     
                 } 
                 else if(timer <= 10) {
+                    if(timer <= 4) {
+                        Info.showLangTitle("get-ready-start", "%sec%", "" + timer);
+                        //Info.sendLangInfo("timer.game-start-countdown", "%sec%", "§b" + timer);
+                    } 
                     for(Player all : Bukkit.getOnlinePlayers()) {
-                        if(timer <= 4) Info.showTitle("§7§o" + timer, "Seit Bereit", all);
-                        else all.sendActionBar(Component.text("§7§o" + timer));
+                        if(timer > 4) all.sendActionBar(Component.text("§b§o" + timer));
                         all.playSound(all.getLocation(), Sound.BLOCK_NOTE_BLOCK_SNARE, 5, 10);
                     }
-                    if(timer <= 4) Info.sendInfo(timer + "");
                 }
                 timer--;
             }
@@ -163,8 +160,8 @@ public class Game {
     }
     
     public static void beginRound() {
-        bossBar.setVisible(true);
-        for(Player all : Main.arena.getPlayers()) bossBar.addPlayer(all);
+        BossBarManager.setVisible(true);
+        for(Player all : Main.arena.getPlayers()) BossBarManager.addPlayer(all);
         GameRepeat.start();
         Map<String, Team> livingPlayers = new HashMap<>();
         for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
@@ -172,7 +169,7 @@ public class Game {
             StatusManger.setPlayerStatus(Status.PLAYING, player);
             if(player == null) return;
             livingPlayers.put(map.getKey(), map.getValue());
-            player.getInventory().remove(Material.RED_BED);
+            player.getInventory().clear();
             ItemStack snowball = new ItemStack(Material.SNOWBALL);
             snowball.setAmount(2);
             player.getInventory().addItem(snowball);
@@ -220,7 +217,7 @@ public class Game {
 
     public static void nextRound(Team wonTeam) {
         // Splitting Teams
-        Info.sendInfo("Das Team wird nun aufgeteilt.");
+        Info.sendLangInfo("event.team-splitting");
         for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
             if(map.getValue() == wonTeam) {
                 Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
@@ -251,7 +248,8 @@ public class Game {
             if(TeamManager.getTeamPlayers(winningTeam).size() <= 1) {
                 winner(Bukkit.getPlayer(UUID.fromString(TeamManager.getTeamPlayers(winningTeam).get(0))));
             } else {
-                Info.sendImportantInfo("Das Team " + winningTeam.getChatColor() + winningTeam.getName() + " §7§okommt weiter.");
+            
+                Info.sendLangImportantInfo("event.team-won", "%team%", "@team." + winningTeam.getId());
                 nextRound(winningTeam);
             } 
         }
@@ -260,8 +258,8 @@ public class Game {
     public static void resetRound() {
         Bukkit.getScheduler().cancelTask(taskID);
         Bukkit.getScheduler().cancelTask(taskID2);
-        Game.bossBar.setVisible(false);
-        bossBar.removeAll();
+        BossBarManager.setVisible(false);
+        BossBarManager.removeAll();
         GateManager.setGateActive(false);
         setLivingPlayers(new HashMap<>());
         setTeamHearts(new HashMap<>());
@@ -280,9 +278,9 @@ public class Game {
     }
 
     public static void winner(Player player) {
-        Info.sendImportantInfo("Der Spieler §6" + player.getName() + " §7§ohat die Schneeballschlacht gewonnen!");
+        Info.sendLangImportantInfo("event.player-won", "%player%", "§6" + player.getName());
         for(Player all : Main.arena.getPlayers()) {
-            Info.showTitle("§6§l§n" + player.getName(), "§7§lhat gewonnen", all);
+            Info.showLangTitle("player-won", "%player%", "" + player.getName());
             all.playSound(all.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 5, 1);
             if(all == player) continue;
             Location l = all.getLocation();
@@ -295,7 +293,7 @@ public class Game {
     }
 
     public static void startReMatch() {
-        Info.sendImportantInfo("Das Spielfeld wird wegen eines Unentschiedens geändert.");
+        Info.sendLangImportantInfo("event.game-change-draw");
         for(Player all : Main.arena.getPlayers()) {
             if(getLivingPlayers().containsKey(all.getUniqueId().toString())) {
                 Team team = TeamManager.getTeamsPlayer().get(all.getUniqueId().toString());
@@ -337,40 +335,48 @@ public class Game {
 
     public static void setGameServerHotbar(Player player) {
         Inventory inv = player.getInventory();
+        UUID uuid = player.getUniqueId();
         for(int slot = 0; slot < 9; slot++) inv.setItem(slot, new ItemStack(Material.AIR));
-        ItemStack joinTeam = new ItemBuilder(Material.BOOK).setDisplayName("§7§lTeilnehmen §7§o(klick)").setTagData("join-team")
-                .setLore("§7Betätige um am Wettkampf Teilzunehmen").build();
-        ItemStack cameraViews = new ItemBuilder(Material.SPYGLASS).setDisplayName("§7§lKamera-Ausichten §7§o(klick)").setTagData("open-camera-views")
-                .setLore("§7Betätige um die Auswahl zu verschiedenen Kamera-Ausichen zu wählen").build();
-        ItemStack backToLobby = new ItemBuilder(Material.BEACON).setDisplayName("§7§lLobby §7§o(klick)").setTagData("join-lobby")
-                .setLore("§7Betätige um zurück in die Lobby zu gelangen").build();
+        ItemStack joinTeam = new ItemBuilder(Material.BOOK).setLangNameDescriptionTag("join-team", uuid).setUnmovable().build();
+        ItemStack cameraViews = new ItemBuilder(Material.SPYGLASS).setLangNameDescriptionTag("open-camera-views", uuid).setUnmovable().build();
+        ItemStack backToLobby = new ItemBuilder(Material.BEACON).setLangNameDescriptionTag("join-lobby", uuid).setUnmovable().build();
+        
         inv.setItem(8, backToLobby);
-        inv.setItem(4, joinTeam);
-        inv.setItem(0, cameraViews);
-        player.getInventory().setHeldItemSlot(3);
+        inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
+        inv.setItem(0, joinTeam);
+        inv.setItem(2, cameraViews);
+        player.getInventory().setHeldItemSlot(1);
         player.updateInventory();
     }
 
     public static void setLobbyHotbar(Player player) {
         Inventory inv = player.getInventory();
+        UUID uuid = player.getUniqueId();
         for(int slot = 0; slot < 9; slot++) inv.setItem(slot, new ItemStack(Material.AIR));
-        ItemStack joinParkour = new ItemBuilder(Material.DARK_OAK_SLAB).setDisplayName("§7§lParkour §7§o(klick)").setTagData("join-parkour").setUnmovable()
-                .setLore("§7Betätige um dich zum Startpunkt", "§7des Parkours zu teleportieren").build();
+        ItemStack joinParkour = new ItemBuilder(Material.DARK_OAK_SLAB).setLangNameDescriptionTag("join-parkour", uuid).setUnmovable().build();
         
-        ItemBuilder joinGameServerBuilder = new ItemBuilder(Material.CLOCK).setDisplayName("§c§lÖffnung: §7§o" + StartClock.openDateDiffrenceText).setUnmovable();;
+        inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
+        inv.setItem(2, joinParkour);
+        updateJoinGameItem(player);
+        player.updateInventory();
+    }
 
-        if(Game.isOpen()) {
+    public static ItemStack getStartClockItem(Player player) {
+        UUID uuid = player.getUniqueId();
+
+        ItemBuilder joinGameServerBuilder = new ItemBuilder(Material.CLOCK).setDisplayName(LanguageManager.getItemName("closed-game-server", uuid).replace("%time%", StartClock.openDateDiffrenceText)).setUnmovable();
+
+        if(Game.isOpen())
             joinGameServerBuilder = joinGameServerBuilder.setMaterial(Material.SNOWBALL)
-                    .setDisplayName("§7§lGame-Server §7§o(klick)")
-                    .setTagData("join-game-server")
-                    .setLore("§7Betätige um dem Game-Server beizutreten.");
-        } else if(StartClock.isRoundGoing) joinGameServerBuilder = joinGameServerBuilder.setLore("§7Lies ab wann der Game-Server öffnet");
-            else joinGameServerBuilder = joinGameServerBuilder.setLore("§7Die Öffnung ist nicht festgelegt.");
+                    .setLangNameDescriptionTag("join-game-server", uuid);
+        else if(StartClock.isTimerStarted) joinGameServerBuilder = joinGameServerBuilder.setLangDescription("closed-game-server-starting", uuid);
+        else joinGameServerBuilder = joinGameServerBuilder.setLangDescription("closed-game-server", uuid);
 
-        ItemStack joinGameServer = joinGameServerBuilder.build();
-        
-        inv.setItem(2, joinGameServer);
-        inv.setItem(6, joinParkour);
+        return joinGameServerBuilder.build();
+    }
+
+    public static void updateJoinGameItem(Player player) {
+        player.getInventory().setItem(0, getStartClockItem(player));
         player.updateInventory();
     }
 
@@ -390,12 +396,14 @@ public class Game {
     public static void openCameraViews(Player player) {
         Inventory inv = Bukkit.createInventory(null, 9, Component.text("§7Kamera-Aussichten"));
         
-        inv.addItem(new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("§f§lKamera Oben").setTagData("use-camera-up").setSkullOwner("2f8bd35f-0ccb-46c6-8321-6e15abe95c93")
-                .setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ0MjJhODJjODk5YTljMTQ1NDM4NGQzMmNjNTRjNGFlN2ExYzRkNzI0MzBlNmU0NDZkNTNiOGIzODVlMzMwIn19fQ==").build());
-        inv.addItem(new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("§f§lKamera Seite Rot").setTagData("use-camera-red-side").setSkullOwner("2f8bd35f-0ccb-46c6-8321-6e15abe95c93")
-                .setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ0MjJhODJjODk5YTljMTQ1NDM4NGQzMmNjNTRjNGFlN2ExYzRkNzI0MzBlNmU0NDZkNTNiOGIzODVlMzMwIn19fQ==").build());
-        inv.addItem(new ItemBuilder(Material.PLAYER_HEAD).setDisplayName("§f§lKamera Seite Blau").setTagData("use-camera-blue-side").setSkullOwner("2f8bd35f-0ccb-46c6-8321-6e15abe95c93")
-                .setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ0MjJhODJjODk5YTljMTQ1NDM4NGQzMmNjNTRjNGFlN2ExYzRkNzI0MzBlNmU0NDZkNTNiOGIzODVlMzMwIn19fQ==").build());
+        UUID uuid = player.getUniqueId();
+
+        ItemBuilder scull = new ItemBuilder(Material.PLAYER_HEAD).setSkullOwner("2f8bd35f-0ccb-46c6-8321-6e15abe95c93")
+                .setSkullTexture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ0MjJhODJjODk5YTljMTQ1NDM4NGQzMmNjNTRjNGFlN2ExYzRkNzI0MzBlNmU0NDZkNTNiOGIzODVlMzMwIn19fQ==");
+
+        inv.addItem(scull.setLangNameDescriptionTag("use-camera-up", uuid).build());
+        inv.addItem(scull.setLangNameDescriptionTag("use-camera-blue-side", uuid).build());
+        inv.addItem(scull.setLangNameDescriptionTag("use-camera-red-side", uuid).build());
         player.openInventory(inv);
     }
 
@@ -451,8 +459,7 @@ public class Game {
             if(!entry.getValue().equals(team)) continue;
             uuids.add(entry.getKey());
         }
-
-        return null;
+        return uuids;
     }
 
     public static void setGameStatus(GameState gameStat) {

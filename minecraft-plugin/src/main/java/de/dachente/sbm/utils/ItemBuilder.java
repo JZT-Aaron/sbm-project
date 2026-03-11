@@ -3,6 +3,7 @@ package de.dachente.sbm.utils;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
@@ -20,6 +21,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,10 +54,33 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder setDisplayName(Component component) {
+        meta.displayName(component.decoration(TextDecoration.ITALIC, false));
+        return this;
+    }
+
+    public ItemBuilder setLangNameDescriptionTag(String itemid, UUID uuid) {
+        this.setTagData(itemid);
+        this.setLangNameDescription(itemid, uuid);
+        return this;
+    }
+
+    public ItemBuilder setLangNameDescription(String itemid, UUID uuid) {
+        this.setDisplayName(LanguageManager.getItemName(itemid, uuid));
+        this.setLangDescription(itemid, uuid);
+        return this;
+    }
+
+    public ItemBuilder setLangDescription(String itemid, UUID uuid) {
+        this.setLore(LanguageManager.getItemDescription(itemid, uuid).toArray(String[]::new));
+        return this;
+    }
+
     public ItemBuilder setDisplayName(String name) {
         meta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
         return this;
     }
+
 
     // Set Lore / Description
     public ItemBuilder setLore(String... loreLines) {
@@ -80,6 +105,20 @@ public class ItemBuilder {
         profile.getProperties().add(new ProfileProperty("textures", textureValue));
         skullMeta.setPlayerProfile(profile);
         return this;
+    }
+
+    public ItemBuilder setSkullTexture(String textureValue, String url) {
+        if(!(meta instanceof SkullMeta skullMeta)) return this;
+
+        PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
+        profile.getProperties().add(new ProfileProperty("textures", encodeBase64(url)));
+        skullMeta.setPlayerProfile(profile);
+        return this;
+    }
+
+    private String encodeBase64(String url) {
+        String json = "{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}";
+        return Base64.getEncoder().encodeToString(json.getBytes());
     }
 
     public ItemBuilder addFlags(ItemFlag... flags) {

@@ -1,10 +1,11 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.BossBarManager;
 import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
-import de.dachente.sbm.utils.Team;
 import net.kyori.adventure.text.Component;
 
 import org.bukkit.entity.Player;
@@ -17,11 +18,16 @@ public class QuitListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         event.quitMessage(Component.empty());
-        Info.sendInfo("§c✗ §7§oDer Spieler §7" + Main.toPlain(player.displayName()) + " §oist jetzt nicht mehr auf dem Server!", "§cServer");
+        Info.sendLangInfo("event.player-left", "%player%", player.getName());
 
-        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName()) && Game.bossBar.getPlayers().contains(player)) {
-            Game.bossBar.removePlayer(player);
+        LanguageManager.removeOnline(player.getUniqueId());
+        MutliLangSignManager.customSigns.remove(player.getUniqueId());
+        
+
+        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName()) && BossBarManager.containsPlayer(player)) {
+            BossBarManager.removePlayer(player);
         }
 
         if(TeamManager.getTeamsPlayer().containsKey(uuid)) {

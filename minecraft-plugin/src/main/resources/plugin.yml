@@ -4,26 +4,27 @@ name: SBM-Plugin
 author: Olvier Martin
 api-version: '1.21'
 description: A Minecraft plugin
+depend: [ProtocolLib]
 commands:
   alert:
-    description: Sende Infos.
+    description: Send Infos.
     aliases:
       - announce
       - info
   game:
-    description: Alles was mit dem Spiel zu tun hat.
+    description: Everything about the game.
   game-server:
-    description: Joine auf den Event-Server.
+    description: Join the Event-Server.
     aliases:
       - event-server
       - server
       - event
   team:
-    description: Füge/Entferne spieler zu Teams.
+    description: Add remove Players to Teams.
     aliases:
       - tm
   lobby:
-    description: Teleportiere dich in die Lobby.
+    description: Join the Lobby.
     aliases:
       - hub
       - spawn

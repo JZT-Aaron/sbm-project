@@ -3,8 +3,6 @@ package de.dachente.sbm.commands;
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.Info;
 
-import java.util.function.Consumer;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,15 +17,15 @@ public class InfoCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(!(sender instanceof Player player)) return true;
 
-        Consumer<String> sendReply = Main.getCmdReplyConsumer("§eBefehle", player);
+        final String SYNTAX = "/info normal/important/private [<player>] <info>";
 
         if(!player.hasPermission(config.getString("permission.sbm.command.info"))) {
-            sendReply.accept("§c§oDies ist dir nicht gestattet!");
+            Info.sendLangError("no-permission", player);
             return true;
         }
 
         if(args.length < 1) {
-            sendReply.accept("Bitte benutze §o/info normal/important/private [<player>] <info>");
+            Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
             return true;
         }
 
@@ -40,19 +38,19 @@ public class InfoCommand implements CommandExecutor {
         }
 
         if(args[0].equalsIgnoreCase("normal")) {
-            Info.sendInfo(message.toString());
+            Info.sendLangClearInfo(message.toString());
             return true;
         }
 
         if(args[0].equalsIgnoreCase("important")) {
-            Info.sendImportantInfo(message.toString());
+            Info.sendLangClearImportantInfo(message.toString());
             return true;
         }
 
         if(args[0].equalsIgnoreCase("private") && args.length > 2) {
             Player target = Bukkit.getPlayer(args[1]);
             if(target == null) {
-                sendReply.accept("Diesen Spieler gibt es nicht!");
+                Info.sendLangError("player-not-found", player, "%player%", args[1]);
                 return true;
             }
             StringBuilder privateMessage = new StringBuilder();
@@ -62,12 +60,12 @@ public class InfoCommand implements CommandExecutor {
                 if(i2 <= 2) continue;
                 privateMessage.append(arg).append(" ");
             }
-            sendReply.accept("§7§oDu flüstert zu " + Main.toPlain(player.displayName()) + "§7: " + privateMessage.toString());
-            Info.sendInfo(privateMessage.toString(), target);
+            Info.sendLangInfo("whisper-to", player, "%player%", target.getName(), "%message%", privateMessage.toString());
+            Info.sendLangClearInfo(privateMessage.toString(), target);
             return true;
         }
 
-        sendReply.accept("Bitte benutze §o/info normal/important/private [<player>] <info>");
+        Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
         return false;
     }
 }

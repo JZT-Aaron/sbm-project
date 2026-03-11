@@ -4,7 +4,7 @@ import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
-import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.Team;
 
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
@@ -13,6 +13,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 public class DamageByEntityListener implements Listener {
+
+    //TODO: Fix Only One Team Damager
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
@@ -45,12 +47,12 @@ public class DamageByEntityListener implements Listener {
         }
 
         if(Game.isRunning() && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
-            Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§owurde von " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogetroffen.");
-            if(player.getHealthScale() <= 2) {
-                Info.sendInfo("Der Spieler " + team.getChatColor() + player.getName() + " §7§oist durch " + TeamManager.getOppositeTeam(team).getChatColor() + damager.getName() +" §7§ogestorben.");
-                Game.deadMode(player);
-            } else
-                player.setHealthScale(player.getHealthScale()-2);
+            boolean isKilled = (player.getHealthScale() <= 2);
+            if(isKilled) Game.deadMode(player);
+            else player.setHealthScale(player.getHealthScale()-2);
+            
+            Info.sendLangInfo("event." + (isKilled ? "player-died" : "player-hit"), "%target%", team.getChatColor() + player.getName(), "%damager%", TeamManager.getOppositeTeam(team).getChatColor() + damager.getName());
+            
             Game.updateTeamHearts();
             event.setCancelled(false);
         }

@@ -7,6 +7,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import de.dachente.sbm.main.Main;
+import de.dachente.sbm.managers.BossBarManager;
+import de.dachente.sbm.utils.enums.Team;
 import net.kyori.adventure.text.Component;
 
 public class GameRepeat {
@@ -26,7 +28,7 @@ public class GameRepeat {
                         long minutes = duration.toMinutes();
                         long seconds = duration.minusMinutes(minutes).getSeconds();
                         String timeText = String.format("%02d:%02d", minutes, seconds);
-                        Game.bossBar.setTitle("§7§l" + timeText);
+                        BossBarManager.setTitle("left-time", "%time%", "§f§l" + timeText);
                         if(duration.isZero() || duration.isNegative()) {
                             stop();
                             GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());

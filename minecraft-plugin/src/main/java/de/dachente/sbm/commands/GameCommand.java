@@ -3,15 +3,18 @@ package de.dachente.sbm.commands;
 import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.Info;
+import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
-import de.dachente.sbm.utils.GameStat;
-import de.dachente.sbm.utils.GameStats;
 import de.dachente.sbm.utils.StartClock;
-import de.dachente.sbm.utils.Team;
 import de.dachente.sbm.utils.enums.GameState;
+import de.dachente.sbm.utils.enums.Team;
 
-import java.util.function.Consumer;
+import static de.dachente.sbm.managers.LanguageManager.getText;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -32,61 +35,60 @@ public class GameCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(!(sender instanceof Player player)) return true;
-
-        Consumer<String> sendReply = Main.getCmdReplyConsumer(SENDER_NAME, player);
-        Consumer<String> sendReplyTimer = Main.getCmdReplyConsumer(SENDER_NAME_TIMER, player);
+        final String SYNTAX = "/game open/close/round/gate/game-joining [timer start open/close on/off] [start/stop/set open/close ] [<date> <time>]";
 
         if(!player.hasPermission(config.getString("permission.sbm.command.game"))) {
-            sendReply.accept("§c§oDies ist dir nicht gestattet!");
+            Info.sendLangError("no-permission", player);
             return true;
         }
 
         if(args.length == 0) {
-            sendReply.accept("Bitte benutze §o/game open/close/start/stop/gate [timer <gate-team-name>] [start/stop/set open/close] [<date (yyyy/MM/dd hh:mm:ss)>]");
+            Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("test")) {
-            sendReply.accept("Before: " + GameStats.get(GameStat.STATE));
-            GameStats.set(GameStat.STATE, "Testing");
-            sendReply.accept("After: " + GameStats.get(GameStat.STATE));
-        }
-
-        if(args[0].equalsIgnoreCase("open") && args.length == 1) {
-            if(Game.isOpen()) {
-                sendReply.accept("§cDas Spiel ist schon offen!");
-            }
-            Game.open();
-            return true;
-        }
-
-        if(args[0].equalsIgnoreCase("gate") && args.length >= 2) {
-            Team team = args.length == 3 ? Team.getTeamById(args[2]) : null;
-            boolean openState;
-            if(args[1].equalsIgnoreCase("open") | args[1].equalsIgnoreCase("close")) openState = args[1].equalsIgnoreCase("open") ? true : false; 
-            else {
-                sendReply.accept("Bitte benutze §7open/close §ofür den zustand der Tore.");
+        if((args[0].equalsIgnoreCase("open") || args[0].equalsIgnoreCase("close")) && args.length == 1) {
+            boolean requestOpen = args[0].equalsIgnoreCase("open");
+            UUID uuid = player.getUniqueId();
+            String stateId = "state." + (requestOpen ? "opened" : "closed");
+            if(Game.isOpen() == requestOpen) {
+                Info.sendLangError("game.game-already", player,  "%state%",LanguageManager.getText(stateId, uuid));
                 return true;
-            }    
-            if(team == null) GateManager.setGateActive(openState);
-            else GateManager.setGateActive(openState, team);
+            }
+            if(requestOpen) Game.open();
+            else Game.close();
+            Info.sendLangInfo("server-state-change", player, "%state%", LanguageManager.getText(stateId, uuid));
+            return true;
         }
 
-        if(args[0].equalsIgnoreCase("close")) {
-            if(!Game.isOpen()) {
-                sendReply.accept("§cDas Spiel ist schon geschlossen!");
+        if(args[0].equalsIgnoreCase("gate") && (args[1].equalsIgnoreCase("open") || args[1].equalsIgnoreCase("close")) && args.length >= 2) {
+            Team team = args.length == 3 ? Team.getTeamById(args[2]) : null;
+            UUID uuid = player.getUniqueId();
+            boolean openState = args[1].equalsIgnoreCase("open");   
+            List<String> placeholder = new ArrayList<>();
+            placeholder.add("%state%");
+            placeholder.add(LanguageManager.getText("state." + (openState ? "unlocked" : "locked"), uuid));
+            if(team == null) GateManager.setGateActive(openState);
+            else {
+                placeholder.add("%team%");
+                placeholder.add(LanguageManager.getText("team." + (team.getId()), uuid));
+                GateManager.setGateActive(openState, team);
             }
-            sendReply.accept("Der Server wurde geschlossen.");
-            Game.close();
+            Info.sendLangInfo("game." + (team == null ? "gate-change" : "team-gate-change"), player, placeholder.toArray(String[]::new));
+            return true;
         }
 
         if(args[0].equalsIgnoreCase("round")) {
             if(args.length < 2) {
-                sendReply.accept("§cBitte benutze round start [now]");
+                Info.sendLangError("syntax-error", player, "%syntax%", "/game round start [now]");
             }
             if(args[1].equalsIgnoreCase("start")) {
+                if((TeamManager.getTeamPlayers(Team.RED).size()*TeamManager.getTeamPlayers(Team.BLUE).size()) < 1) {
+                    Info.sendLangError("game.not-enough-players", player);
+                    return true;
+                }
                 if(Game.isRunning()) {
-                    sendReply.accept("§cDie Runde läuft schon!");
+                    Info.sendLangError("game.round-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
                     return true;
                 }   
                 if(args.length == 3 && args[2].equalsIgnoreCase("now")) {
@@ -94,39 +96,37 @@ public class GameCommand implements CommandExecutor {
                     return true;
                 }
                 Game.startTimer();
-                sendReply.accept("Die Runde wird gestartet.");
-            }
-            
+                Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.started", player.getUniqueId()));
+            } 
+            return true;
         }
 
         // When production add confirm
         if(args[0].equalsIgnoreCase("hard-reset")) {
-            if(!Game.isRunning()) {
-                sendReply.accept("§cDas Spiel läuft nicht!");
-                return true;
-            }
-            sendReply.accept("Das Spiel wird gestoppt.");
             Game.hardReset();
+            Info.sendInfo("Hard Reset Complete", "§aDev-Cmd");
+            return true;
         }
 
         if(args[0].equalsIgnoreCase("dead") && args.length == 2) {
             Player target = Bukkit.getPlayer(args[1]);
             if(target == null) {
-                sendReply.accept("§cDer Spieler ist nicht auf dem Server!");
+                Info.sendLangError("player-not-found", player, "%player%", args[1]);
                 return true;
             }
             if(!TeamManager.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
-                sendReply.accept("§cDer Spieler ist in keinem Team!");
+                Info.sendLangError("team.player-not-found", player, "%player%", target.getName());
                 return true;
             }
             Game.deadMode(target);
-            sendReply.accept("Der Spieler §7" + Main.toPlain(target.displayName()) + " ist jetzt tod.");
+            Info.sendInfo("Player killed", "§aDev-Cmd", player);
+            return true;
         }
 
         if(args[0].equalsIgnoreCase("bonus-snowball") && args.length == 2) {
             Team team = Team.getTeamById(args[1]);
             if(team == null) {
-                sendReply.accept("Dieses Team gibt es nicht!");
+                Info.sendLangError("team.not-found", player);
                 return true;
             }
             Location l = null;
@@ -137,46 +137,54 @@ public class GameCommand implements CommandExecutor {
                 l = new Location(Main.arena, 0.5, 3, -6.5);
             }
             Main.arena.dropItemNaturally(l, new ItemStack(Material.SNOWBALL));
+            Info.sendInfo("Snowball dropped", "§aDev-Cmd", player);
+            return true;
         }
 
         if(args[0].equalsIgnoreCase("game-joining") && args.length == 2) {
             if(!(args[1].equalsIgnoreCase("on") || args[1].equalsIgnoreCase("off"))) {
-                Info.sendInfo("Bitte nutzte nur §7on §ooder §7off§o.", SENDER_NAME, player);
+                Info.sendLangError("syntax-error", player, "%syntax%", "/game game-joining on/off");
                 return true;
             }
-
-            if(args[1].equalsIgnoreCase("on")) 
-                Game.setGameStatus(args[1].equalsIgnoreCase("on") ? GameState.OPEN : GameState.CLOSED);
+            boolean isOn = args[1].equalsIgnoreCase("on");
+            Game.setGameStatus(isOn ? GameState.OPEN : GameState.CLOSED);
+            Info.sendLangInfo("game.game-joining", player, "%state%", getText("state." + (isOn ? "unlocked" : "locked"), player.getUniqueId()));
+            return true;
         }
 
         if(args[0].equalsIgnoreCase("winner") && args.length == 2) {
             Player winner = Bukkit.getPlayer(args[1]);
             if(winner == null) {
-                Info.sendInfo("Dieser Spieler ist nicht Online!", player);
+                Info.sendLangError("player-not-found", player, "%player%", args[1]);
                 return true;
             }
             Game.winner(winner);
+            Info.sendInfo("Player set as won.", "§aDev-Cmd", player);
+            return true;
         }
 
-        if(args[0].equalsIgnoreCase("open") && args[1].equalsIgnoreCase("timer")) {
+        if(args[0].equalsIgnoreCase("open") && args[1].equalsIgnoreCase("timer") && args.length >= 3) {
             switch (args[2]) {
                 case "start" -> {
                     StartClock.start();
-                    sendReplyTimer.accept("Der Timer wurde gestartet.");
+                    Info.sendLangInfo("timer.started", player);
                 }
                 case "stop" -> {
                     StartClock.stop();
-                    sendReplyTimer.accept("Der Timer wurde gestoppt.");
+                    Info.sendLangInfo("timer.stopped", player);
                 }
                 case "set" -> {
-                    if(args.length != 5) break;
+                    if(args.length != 5) {
+                        Info.sendLangError("syntax-error", player, "%syntax%", "/game open timer set <date> <time>");
+                        break;
+                    };
 
                     if(!args[3].matches("\\d{4}/\\d{1,2}/\\d{1,2}")) {
-                        sendReplyTimer.accept("§cBitte nutzte dieses Format: §oyyyy/MM/dd§c!");
+                        Info.sendLangError("timer.wrong-format", player, "%format%","yyyy/MM/dd");
                         break;
                     }
                     if(!args[4].matches("\\d{1,2}:\\d{1,2}:\\d{1,2}")) {
-                        sendReplyTimer.accept("§cBitte nutzte dieses Format: §ohh:mm:ss§c!");
+                        Info.sendLangError("timer.wrong-format", player, "%format%", "hh:mm:ss");
                         break;
                     }
                     String[] args2 = args[3].split("/");
@@ -187,7 +195,7 @@ public class GameCommand implements CommandExecutor {
                     int s = Integer.parseInt(args3[2]);
                     int m = Integer.parseInt(args3[1]);
                     int h = Integer.parseInt(args3[0]);
-                    sendReplyTimer.accept("Der Timer wurde auf den §7"+ args[3] +" um " + args[4] + " Uhr §ogesetzt.");
+                    Info.sendLangInfo("timer.set", player, "%date%", args[3], "%time%", args[4]);
                     config.set("start.clock.time.y", y);
                     config.set("start.clock.time.M", M);
                     config.set("start.clock.time.d", d);
@@ -199,8 +207,13 @@ public class GameCommand implements CommandExecutor {
                         Info.sendImportantInfo("Der Start wurde auf den §o" + args[3] + " §lum §o" + args[4] + "§l verschoben");
                     }
                 }
+                default -> {
+                    Info.sendLangError("syntax-error", player, "%syntax%", "/game open timer start/stop/set [<date> <time>]");
+                }
             }
+            return true;
         }
+        Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
         return false;
     }
 }

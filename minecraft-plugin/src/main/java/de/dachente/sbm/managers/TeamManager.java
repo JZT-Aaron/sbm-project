@@ -1,5 +1,7 @@
 package de.dachente.sbm.managers;
 
+import static de.dachente.sbm.managers.LanguageManager.getText;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +14,7 @@ import org.bukkit.entity.Player;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.GameStat;
 import de.dachente.sbm.utils.GameStats;
-import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.Team;
 
 public class TeamManager {
     
@@ -37,6 +39,10 @@ public class TeamManager {
     }
 
     public static void addPlayerTeam(String uuid, Team team) {
+        if(team == null) {
+            addPlayerTeam(uuid);
+            return;
+        } 
         Player player = Bukkit.getPlayer(UUID.fromString(uuid));
         player.getInventory().clear();
         //Location teamSpawnLocation = null;
@@ -51,7 +57,8 @@ public class TeamManager {
         player.updateInventory();
 
         Game.setTeamChestPlate(team, player);
-        Info.sendInfo("§oDu bist jetzt in " + team.getChatColor() + team.getName() + "§7.", "Info", Bukkit.getPlayer(UUID.fromString(uuid)));
+        UUID rUuid = UUID.fromString(uuid);
+        Info.sendLangInfo("team.team-join", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));
     }
 
     public static void removePlayerTeam(String uuid) {
@@ -64,8 +71,9 @@ public class TeamManager {
         teamsPlayer.remove(uuid);
         updateTeamsPlayers(teamsPlayer);
 
-        Game.setViewer(player);    
-        Info.sendInfo("§oDu bist jetzt nicht mehr " + team.getChatColor() + team.getName() + "§7.", Bukkit.getPlayer(UUID.fromString(uuid)));
+        Game.setViewer(player);
+        UUID rUuid = UUID.fromString(uuid);
+        Info.sendLangInfo("team.team-leave", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));
     }
 
 

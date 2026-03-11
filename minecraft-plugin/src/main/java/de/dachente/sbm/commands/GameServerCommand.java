@@ -16,12 +16,12 @@ public class GameServerCommand implements CommandExecutor {
         if(!(sender instanceof Player player)) return true;
 
         if(!Game.isOpen() && !player.isOp()) {
-            Info.sendInfo("§cDer Event-Server ist noch nicht Offen!", player);
+            Info.sendLangError("server-closed", player);
             return true;
         }
 
         if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && !player.isOp()) {
-            Info.sendInfo("Du kannst das jetzt nicht tun!", player);
+            Info.sendLangError("currently-no-permission", player);
             return true;
         }
 
