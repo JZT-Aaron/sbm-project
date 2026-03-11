@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Status;
+import de.dachente.sbm.utils.enums.Team;
 
 public enum GameStat {
     STATE("state", GameState.class, GameState.CLOSED),

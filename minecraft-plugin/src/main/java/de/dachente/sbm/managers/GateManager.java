@@ -14,8 +14,8 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.sign.Side;
 
-import de.dachente.sbm.utils.Team;
 import de.dachente.sbm.utils.enums.SignFrame;
+import de.dachente.sbm.utils.enums.Team;
 
 public class GateManager {
 

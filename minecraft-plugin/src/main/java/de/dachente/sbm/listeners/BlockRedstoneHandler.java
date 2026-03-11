@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockRedstoneEvent;
 
 import de.dachente.sbm.managers.GateManager;
-import de.dachente.sbm.utils.Team;
+import de.dachente.sbm.utils.enums.Team;
 
 public class BlockRedstoneHandler implements Listener {
 

@@ -7,6 +7,7 @@ import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.ItemBuilder;
 import de.dachente.sbm.utils.enums.GameState;
+import de.dachente.sbm.utils.enums.Server;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -25,6 +26,7 @@ public class InteractListener implements Listener {
     @EventHandler
     public void onInteractEvent(PlayerInteractEvent event) throws MalformedURLException {
         Player player = event.getPlayer();
+        if(event.getItem() == null) return;
         if(!(player.hasPermission(config.getString("permission.sbm.allow.interact")) || (event.getItem().getType().equals(Material.SNOWBALL))
                 && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()))) {
             event.setCancelled(true);
@@ -62,14 +64,12 @@ public class InteractListener implements Listener {
         }
 
         if(id.equalsIgnoreCase("join-lobby")) {
-            player.teleport(Main.lobby.getSpawnLocation());
-            Game.setLobbyHotbar(player);
+            Main.joinServer(Server.LOBBY, player);
             return;
         }
 
         if(id.equalsIgnoreCase("join-game-server")) {
-            player.teleport(Main.arena.getSpawnLocation());
-            Game.setGameServerHotbar(player);
+            Main.joinServer(Server.EVENT_SERVER, player);
             return;
         }
 
