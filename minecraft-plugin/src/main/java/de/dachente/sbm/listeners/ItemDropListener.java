@@ -15,7 +15,7 @@ public class ItemDropListener implements Listener {
 
         if(!ItemBuilder.hasPersistedDataContainer(item)) return;
 
-        if(ItemBuilder.isUnmovable(item)) {
+        if(ItemBuilder.isUnmovable(item) || ItemBuilder.isUnDroppable(item)) {
             event.setCancelled(true);
         }
     }

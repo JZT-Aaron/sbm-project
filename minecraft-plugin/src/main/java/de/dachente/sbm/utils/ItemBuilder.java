@@ -149,6 +149,11 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder setUnDroppable() {
+        meta.getPersistentDataContainer().set(Main.NO_DROP, PersistentDataType.BYTE, (byte) 1);
+        return this;
+    }
+
     public ItemBuilder addEnchant(Enchantment enchantment, int level) {
         meta.addEnchant(enchantment, level, true);
         return this;

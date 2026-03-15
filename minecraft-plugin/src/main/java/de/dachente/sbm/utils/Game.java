@@ -128,6 +128,9 @@ public class Game {
     }
 
     public static void startSpreadTimer() {
+        boolean isMatch = state().equals(GameState.STARTING_MATCH);
+        if(isMatch) {
+            MapManager.ifNotloadMap(GameMap.GAME);
         GateManager.setGateActive(true);
         Info.sendLangImportantInfo("timer.spread-timer-start", "%sec%", "§b10");
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
@@ -157,6 +160,28 @@ public class Game {
                 timer--;
             }
         }, 0, 20);
+    }
+
+    public static void replaceBocks(Location p1, Location p2, Material replace, Material target) {
+        World world = p1.getWorld();
+        int minX = Math.min(p1.getBlockX(), p2.getBlockX());
+        int maxX = Math.max(p1.getBlockX(), p2.getBlockX());
+
+        int minY = Math.min(p1.getBlockY(), p2.getBlockY());
+        int maxY = Math.max(p1.getBlockY(), p2.getBlockY());
+
+        int minZ = Math.min(p1.getBlockZ(), p2.getBlockZ());
+        int maxZ = Math.max(p1.getBlockZ(), p2.getBlockZ());
+
+        for(int x = minX; x <= maxX; x++) {
+            for(int y = minY; y <= maxY; y++) {
+                for(int z = minZ; z <= maxZ; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if(block.getType() != replace) continue;
+                    block.setType(target);
+                }
+            }
+        }
     }
     
     public static void beginRound() {
@@ -237,13 +262,14 @@ public class Game {
         int blueHeats = getTeamHearts(Team.BLUE);
         int redHeats = getTeamHearts(Team.RED);
 
-        resetRound();
-
         // Determine Games Outcome
         if(redHeats == blueHeats) {
-            Info.sendInfo("[DEBUG] End Round Determined: REMATCH");
+            Info.showLangTitle("rematch");
+            Info.sendLangImportantInfo("rematch.start");
+            startReMatch();
         } 
         else {
+            resetRound();
             Team winningTeam = (blueHeats > redHeats) ? Team.BLUE : Team.RED;
             if(TeamManager.getTeamPlayers(winningTeam).size() <= 1) {
                 winner(Bukkit.getPlayer(UUID.fromString(TeamManager.getTeamPlayers(winningTeam).get(0))));
@@ -292,21 +318,33 @@ public class Game {
         player.teleport(new Location(Main.arena,0.5, 9, 86.5, 90, 0));
     }
 
+    public static Location getRematchSpawnLocation(Player player) {
+        return Main.parseLocation(config.getString("rematch-spawn." + TeamManager.getTeam(player).getId()), Main.arena);
+    }
+
     public static void startReMatch() {
         Info.sendLangImportantInfo("event.game-change-draw");
+
+        ItemStack stick = new ItemBuilder(Material.STICK).addEnchant(Enchantment.KNOCKBACK, 2).setUnDroppable().build();
+
         for(Player all : Main.arena.getPlayers()) {
             if(getLivingPlayers().containsKey(all.getUniqueId().toString())) {
-                Team team = TeamManager.getTeamsPlayer().get(all.getUniqueId().toString());
-                if(team == Team.BLUE) {
-                    all.teleport(new Location(Main.arena, 0.5, 2, -83.5, 180, 0));
-                }
-                if(team == Team.RED) {
-                    all.teleport(new Location(Main.arena, 0.5, 2, -87.5, 0, 0));
-                }
+                //Downset Hearts
+                int currentHearts = (int) all.getHealthScale();
+                all.sendMessage("Current Hearts: " + currentHearts);
+                int newHearts = ((currentHearts+5)/6)*2;
+                all.sendMessage("New Hearts: " + newHearts);
+                all.setHealthScale((double) newHearts);
+
+                Game.updateTeamHearts();
+
+                //Teleport on Platform
+                Location loc = getRematchSpawnLocation(all);
+                all.teleport(loc); 
                 all.getInventory().remove(Material.SNOWBALL);
-            } else {
-                Location playerLocation = all.getLocation();
-                all.teleport(new Location(Main.arena, playerLocation.getX(), playerLocation.getY(), playerLocation.getZ()-85.5, playerLocation.getYaw(), playerLocation.getPitch()));
+
+                //Give everyone Stick
+                all.getInventory().setItem(0, stick);
             }
         }
         setGameStatus(GameState.RUNNING_REMATCH);

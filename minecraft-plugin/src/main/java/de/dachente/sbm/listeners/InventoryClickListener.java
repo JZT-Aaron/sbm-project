@@ -28,7 +28,7 @@ public class InventoryClickListener implements Listener {
         if(!ItemBuilder.hasPersistedDataContainer(item)) return;
 
 
-        if(ItemBuilder.isUnmovable(item)) {
+        if(ItemBuilder.isUnmovable(item) && !(player.hasPermission(Main.getPlugin().getConfig().getString("permission.sbm.allow.item-move")) && player.getGameMode().equals(GameMode.CREATIVE)) ) {
             event.setCancelled(true);
         }
 

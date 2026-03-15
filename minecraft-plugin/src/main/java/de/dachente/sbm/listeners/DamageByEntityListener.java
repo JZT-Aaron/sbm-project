@@ -1,9 +1,9 @@
 package de.dachente.sbm.listeners;
 
-import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Team;
 
 import org.bukkit.entity.Player;
@@ -18,30 +18,27 @@ public class DamageByEntityListener implements Listener {
 
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
-        if(!(event.getEntity() instanceof Player)) return;
-        Player player = (Player) event.getEntity();
-        if(player.getWorld().equals(Main.lobby) || !TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()) ||   
-            !Game.isRunning() || !Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) {
+        if(!(event.getEntity() instanceof Player player)) return;
+
+        if(!(Game.isRunning() && Game.getLivingPlayers().containsKey(player.getUniqueId().toString()))) {
             event.setCancelled(true);
+            return;
+        }
+
+        if(!Game.state().equals(GameState.RUNNING_MATCH)) {
             return;
         }
 
         Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         Player damager = null;
 
-        if(event.getDamager() instanceof Snowball) {
-            Snowball snowball = (Snowball) event.getDamager();
-            if(snowball.getShooter() instanceof Player) {
-                damager = (Player) snowball.getShooter();
-            }
-        }
+        if(event.getDamager() instanceof Snowball snowball) if(snowball.getShooter() instanceof Player shooter) damager = shooter;
+        if(event.getDamager() instanceof Player newDamager) damager = newDamager;
+        
 
-        if(event.getDamager() instanceof Player) {
-            damager = (Player) event.getDamager();
-        }
-
-        if(damager == null) return;
-        if(!TeamManager.getTeamsPlayer().containsKey(damager.getUniqueId().toString())) {
+        if(damager == null) throw new IllegalArgumentException("A Game hit without shooter was detected.");
+        
+        if(TeamManager.getTeamPlayers(team).contains(damager.getUniqueId().toString())) {
             event.setCancelled(true);
             return;
         }
@@ -54,7 +51,6 @@ public class DamageByEntityListener implements Listener {
             Info.sendLangInfo("event." + (isKilled ? "player-died" : "player-hit"), "%target%", team.getChatColor() + player.getName(), "%damager%", TeamManager.getOppositeTeam(team).getChatColor() + damager.getName());
             
             Game.updateTeamHearts();
-            event.setCancelled(false);
         }
     }
 
