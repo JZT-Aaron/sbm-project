@@ -23,18 +23,18 @@ public class GameRepeat {
                         all.sendActionBar(Component.text("§9§l♥ " + (Game.getTeamHearts(Team.BLUE)/2) + " §7- §c§l♥ " + (Game.getTeamHearts(Team.RED)/2)));
                     
                     Long gameEndMilli = GameStats.get(GameStat.GAME_END_TIMESTAMP);
+                    String timeText = "--:--";
                     if(gameEndMilli != null) {
                         Duration duration = Duration.between(Instant.now(), Instant.ofEpochMilli(gameEndMilli));
                         long minutes = duration.toMinutes();
                         long seconds = duration.minusMinutes(minutes).getSeconds();
-                        String timeText = String.format("%02d:%02d", minutes, seconds);
-                        BossBarManager.setTitle("left-time", "%time%", "§f§l" + timeText);
+                        timeText = String.format("%02d:%02d", minutes, seconds);
                         if(duration.isZero() || duration.isNegative()) {
-                            stop();
                             GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());
                             Game.endRound();
                         }
-                    }
+                    } else if(!Game.isRunning()) stop();
+                    BossBarManager.setTitle("left-time", "%time%", "§f§l" + timeText);
                 }
                     
             }   

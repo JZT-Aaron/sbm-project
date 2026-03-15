@@ -21,11 +21,7 @@ public class QuitListener implements Listener {
         String uuid = player.getUniqueId().toString();
         event.quitMessage(Component.empty());
         Info.sendLangInfo("event.player-left", "%player%", player.getName());
-
-        LanguageManager.removeOnline(player.getUniqueId());
-        MutliLangSignManager.customSigns.remove(player.getUniqueId());
         
-
         if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName()) && BossBarManager.containsPlayer(player)) {
             BossBarManager.removePlayer(player);
         }
@@ -35,6 +31,7 @@ public class QuitListener implements Listener {
             Game.removeFromLivingPlayers(uuid);
         }
 
-
+        LanguageManager.removeOnline(player.getUniqueId());
+        MutliLangSignManager.customSigns.remove(player.getUniqueId());
     }
 }

@@ -13,6 +13,7 @@ import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
@@ -22,6 +23,7 @@ import de.dachente.sbm.commands.GameCommand;
 import de.dachente.sbm.commands.GameServerCommand;
 import de.dachente.sbm.commands.InfoCommand;
 import de.dachente.sbm.commands.LobbyCommand;
+import de.dachente.sbm.commands.MapsCommand;
 import de.dachente.sbm.commands.TeamCommand;
 import de.dachente.sbm.listeners.AsyncPlayerPreLoginListener;
 import de.dachente.sbm.listeners.BlockBreakListener;
@@ -43,6 +45,7 @@ import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.StatusManger;
 import de.dachente.sbm.tabs.GameTab;
 import de.dachente.sbm.tabs.InfoTab;
+import de.dachente.sbm.tabs.MapsTab;
 import de.dachente.sbm.tabs.TeamTab;
 import de.dachente.sbm.tabs.VoidTab;
 import de.dachente.sbm.utils.Game;
@@ -67,6 +70,7 @@ public final class Main extends JavaPlugin {
     public static World arena;
     private static Main plugin;
     public static NamespacedKey NO_MOVE;
+    public static NamespacedKey NO_DROP;
     public static NamespacedKey TAG_KEY;
 
     private static BackendClient backendClient;
@@ -98,6 +102,7 @@ public final class Main extends JavaPlugin {
         Server.EVENT_SERVER.setWorld(arena);
 
         NO_MOVE = new NamespacedKey(this, "no-move");
+        NO_DROP = new NamespacedKey(this, "no-drop");
         TAG_KEY = new NamespacedKey(this, "tag-data");
 
         registerCommands();
@@ -170,7 +175,6 @@ public final class Main extends JavaPlugin {
         dbManager = new DatabaseManager(dbHost, dbPort, dbDB, user, dbPasswort);
     }
 
-
     public static BackendClient getBackendClient() {
         return backendClient;
     }
@@ -195,6 +199,10 @@ public final class Main extends JavaPlugin {
         getCommand("game").setExecutor(new GameCommand());
         getCommand("game").setTabCompleter(new GameTab());
         getCommand("game").setPermission(getConfig().getString("permission.sbm.command.game"));
+
+        getCommand("maps").setExecutor(new MapsCommand());
+        getCommand("maps").setTabCompleter(new MapsTab());
+        getCommand("maps").setPermission(getConfig().getString("permission.sbm.command.maps"));
 
         getCommand("game-server").setExecutor(new GameServerCommand());
         getCommand("game-server").setTabCompleter(new VoidTab());
@@ -274,21 +282,24 @@ public final class Main extends JavaPlugin {
         return mirror;
     }
 
-    private List<Location> parseList(String string) {
+    public static List<Location> parseList(String string) {
         return parseList(string, arena);
     }
 
-    private List<Location> parseList(String string, World world) {
+    public static List<Location> parseList(String string, World world) {
         List<Location> locations = new ArrayList<>();
         String[] locs = string.split(";");
-        for(String loc : locs) {
-            Double[] cords = Arrays.stream(loc.split(","))
+        
+        for(String loc : locs) locations.add(parseLocation(loc, world));
+        
+        return locations;
+    }
+
+    public static Location parseLocation(String loc, World world) {
+        Double[] cords = Arrays.stream(loc.split(","))
                 .map(Double::valueOf)
                 .toArray(Double[]::new);
-            Location l = new Location(world, cords[0], cords[1], cords[2]);
-            locations.add(l);
-        }
-        return locations;
+        return new Location(world, cords[0], cords[1], cords[2]);
     }
 
     private void registerCameras() {
@@ -339,6 +350,14 @@ public final class Main extends JavaPlugin {
                 resendLobbySigns.add(player);
             }
             BossBarManager.removePlayer(player);
+        }
+    }
+
+    public static void clearDroppedItems() {
+        for(Entity entity : Main.arena.getEntities()) {
+            if(!entity.getType().equals(EntityType.ITEM) ||
+                    (entity.getLocation().distanceSquared(parseLocation(getPlugin().getConfig().getString("arena-center"), arena)) > 40)) continue;
+            entity.remove();
         }
     }
 }

@@ -9,6 +9,7 @@ import de.dachente.sbm.utils.ItemBuilder;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Server;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -27,7 +28,7 @@ public class InteractListener implements Listener {
     public void onInteractEvent(PlayerInteractEvent event) throws MalformedURLException {
         Player player = event.getPlayer();
         if(event.getItem() == null) return;
-        if(!(player.hasPermission(config.getString("permission.sbm.allow.interact")) || (event.getItem().getType().equals(Material.SNOWBALL))
+        if(!((player.hasPermission(config.getString("permission.sbm.allow.item-move")) && player.getGameMode().equals(GameMode.CREATIVE)) || (event.getItem().getType().equals(Material.SNOWBALL))
                 && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()))) {
             event.setCancelled(true);
         }

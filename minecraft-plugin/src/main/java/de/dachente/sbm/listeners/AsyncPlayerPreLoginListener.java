@@ -15,10 +15,9 @@ public class AsyncPlayerPreLoginListener  implements Listener {
     public void onAsyncJoin(AsyncPlayerPreLoginEvent event) {
         UUID uuid = event.getUniqueId();
         if(!PlayerStats.containsPlayerSync(uuid)) PlayerStats.createPlayerSync(uuid, event.getName());
-        else {
-            PlayerStats.loggedInSync(uuid);
-            LanguageManager.addOnlineSnyc(uuid);
-        }
+        else PlayerStats.loggedInSync(uuid);
+        
+        LanguageManager.addOnlineSnyc(uuid);
     }
     
 }

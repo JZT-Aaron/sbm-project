@@ -5,8 +5,10 @@ import de.dachente.sbm.managers.BossBarManager;
 import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.LanguageManager;
+import de.dachente.sbm.managers.MapManager;
 import de.dachente.sbm.managers.StatusManger;
 import de.dachente.sbm.managers.TeamManager;
+import de.dachente.sbm.utils.enums.GameMap;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Server;
 import de.dachente.sbm.utils.enums.Status;
@@ -14,13 +16,18 @@ import de.dachente.sbm.utils.enums.Team;
 import net.kyori.adventure.text.Component;
 
 import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.block.Dropper;
+import org.bukkit.block.data.Lightable;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -37,6 +44,8 @@ public class Game {
     
     public static List<String> leftTeamPlayers = new ArrayList<>();
     public static List<ArmorStand> cameraPoints = new ArrayList<>();
+
+    public static ItemStack snowball = new ItemStack(Material.SNOWBALL);
 
     public static int blueHearts = 0;
     public static int redHearts = 0;
@@ -60,7 +69,7 @@ public class Game {
     public static void setViewer(Player player) {
         player.teleport(Main.arena.getSpawnLocation());
         player.getInventory().clear();
-        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) setTeamChestPlate(player);
+        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) TeamManager.setTeamChestPlate(player);
         else StatusManger.setPlayerStatus(Status.WATCHING, player);
         player.setHealthScale(20);
         player.setHealth(20);
@@ -95,7 +104,7 @@ public class Game {
     }
 
     public static void startTimer() {
-        setGameStatus(GameState.STARTING);
+        setGameStatus(GameState.STARTING_MATCH);
         Info.sendLangImportantInfo("timer.gate-timer-start", "%sec%", "§b5");
         Info.showLangTitle("gate-open-countdown");
         for(Player all : Bukkit.getOnlinePlayers()) {
@@ -126,7 +135,9 @@ public class Game {
         boolean isMatch = state().equals(GameState.STARTING_MATCH);
         if(isMatch) {
             MapManager.ifNotloadMap(GameMap.GAME);
-        GateManager.setGateActive(true);
+            GateManager.setGateActive(true);
+        } 
+        
         Info.sendLangImportantInfo("timer.spread-timer-start", "%sec%", "§b10");
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 10;
@@ -139,7 +150,15 @@ public class Game {
                     for(Player all : Bukkit.getOnlinePlayers()) {
                         all.playSound(all.getLocation(), Sound.EVENT_RAID_HORN, 10, 1);
                     }
-                    beginRound();
+                    if(isMatch) beginRound();
+                    else {
+                        List<Location> poses = Main.parseList(config.getString("rematch-spawn.barrier-box"), Main.arena);
+                        replaceBocks(poses.get(0), poses.get(1), Material.BARRIER, Material.AIR);
+
+                        Instant gameEndTimestamp = Instant.now().plus(ROUND_LENGHT, ChronoUnit.MINUTES);
+                        GameStats.set(GameStat.GAME_END_TIMESTAMP, gameEndTimestamp.toEpochMilli());
+                        GameStats.set(GameStat.STATE, GameState.RUNNING_REMATCH);
+                    }
                     
                 } 
                 else if(timer <= 10) {
@@ -264,7 +283,7 @@ public class Game {
             Info.showLangTitle("rematch");
             Info.sendLangImportantInfo("rematch.start");
             startReMatch();
-        } 
+        }
         else {
             resetRound();
             Team winningTeam = (blueHeats > redHeats) ? Team.BLUE : Team.RED;
@@ -284,6 +303,12 @@ public class Game {
         BossBarManager.setVisible(false);
         BossBarManager.removeAll();
         GateManager.setGateActive(false);
+        for(Player all : Main.arena.getPlayers()) {
+            if(!TeamManager.getTeamsPlayer().containsKey(all.getUniqueId().toString())) continue;
+            all.getInventory().clear();
+            TeamManager.setTeamChestPlate(all);
+            all.setHealthScale(20);
+        }
         setLivingPlayers(new HashMap<>());
         setTeamHearts(new HashMap<>());
         GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());
@@ -297,6 +322,7 @@ public class Game {
     }
 
     public static void winner(Player player) {
+        resetRound();
         Info.sendLangImportantInfo("event.player-won", "%player%", "§6" + player.getName());
         for(Player all : Main.arena.getPlayers()) {
             Info.showLangTitle("player-won", "%player%", "" + player.getName());
@@ -338,25 +364,11 @@ public class Game {
 
                 //Give everyone Stick
                 all.getInventory().setItem(0, stick);
-            }
+            } 
         }
-        setGameStatus(GameState.RUNNING_REMATCH);
-    }
-
-    public static void setTeamChestPlate(Player player) {
-        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
-        setTeamChestPlate(team, player);
-    }
-
-    public static void setTeamChestPlate(Team team, Player player) {
-        ItemStack teamChestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
-        LeatherArmorMeta teamChestplateMeta = (LeatherArmorMeta) teamChestplate.getItemMeta();
-        teamChestplateMeta.setColor(team.getColor());
-        teamChestplateMeta.getPersistentDataContainer().set(Main.NO_MOVE, PersistentDataType.BYTE, (byte) 1);
-        teamChestplateMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        teamChestplateMeta.addItemFlags(ItemFlag.HIDE_DYE);
-        teamChestplate.setItemMeta(teamChestplateMeta);
-        player.getInventory().setChestplate(teamChestplate);
+        MapManager.loadMap(GameMap.REMATCH);
+        setGameStatus(GameState.STARTING_REMATCH);
+        startSpreadTimer();
     }
 
     public static void setServerHotbar(Server server, Player player) {
@@ -539,7 +551,7 @@ public class Game {
             }
         }.runTaskTimer(Main.getPlugin(), 0L, 10L);
     }
-
+    
     /*public static String decoeSekToMinSek(int sek) {
         int min = sek/60;
         int mintesInSek = min*60;

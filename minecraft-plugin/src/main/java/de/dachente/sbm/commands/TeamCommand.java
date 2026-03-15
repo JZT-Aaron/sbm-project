@@ -42,6 +42,7 @@ public class TeamCommand implements CommandExecutor {
         if((args[0].equalsIgnoreCase("add") || args[0].equalsIgnoreCase("remove")) && args.length >= 2) {
             boolean isAdd = args[0].equalsIgnoreCase("add");
             Team team = null;
+            if(target == null) throw new IllegalArgumentException("Target can't be null");
 
             if(!isAdd && !TeamManager.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
                 Info.sendLangError("team.player-not-found", target, "%player%", target.getName());

@@ -9,8 +9,14 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.persistence.PersistentDataType;
 
+import de.dachente.sbm.main.Main;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.GameStat;
 import de.dachente.sbm.utils.GameStats;
@@ -56,7 +62,7 @@ public class TeamManager {
         Game.loadLobbyInv(player);
         player.updateInventory();
 
-        Game.setTeamChestPlate(team, player);
+        setTeamChestPlate(team, player);
         UUID rUuid = UUID.fromString(uuid);
         Info.sendLangInfo("team.team-join", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));
     }
@@ -81,6 +87,22 @@ public class TeamManager {
         for(String uuid : getTeamPlayers(team)) {
             removePlayerTeam(uuid);
         }
+    }
+
+    public static void setTeamChestPlate(Team team, Player player) {
+        ItemStack teamChestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
+        LeatherArmorMeta teamChestplateMeta = (LeatherArmorMeta) teamChestplate.getItemMeta();
+        teamChestplateMeta.setColor(team.getColor());
+        teamChestplateMeta.getPersistentDataContainer().set(Main.NO_MOVE, PersistentDataType.BYTE, (byte) 1);
+        teamChestplateMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        teamChestplateMeta.addItemFlags(ItemFlag.HIDE_DYE);
+        teamChestplate.setItemMeta(teamChestplateMeta);
+        player.getInventory().setChestplate(teamChestplate);
+    }
+    
+    public static void setTeamChestPlate(Player player) {
+        Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
+        setTeamChestPlate(team, player);
     }
 
     public static Map<String, Team> getTeamsPlayer() {

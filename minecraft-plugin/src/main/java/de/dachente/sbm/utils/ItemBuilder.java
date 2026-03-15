@@ -197,4 +197,10 @@ public class ItemBuilder {
         Byte tag = item.getItemMeta().getPersistentDataContainer().get(Main.NO_MOVE, PersistentDataType.BYTE);
         return tag != null && tag == (byte) 1;
     }
+
+    public static boolean isUnDroppable(ItemStack item) {
+        if(item == null || item.getItemMeta() == null) return false;
+        Byte tag = item.getItemMeta().getPersistentDataContainer().get(Main.NO_DROP, PersistentDataType.BYTE);
+        return tag != null && tag == (byte) 1;
+    }
 }

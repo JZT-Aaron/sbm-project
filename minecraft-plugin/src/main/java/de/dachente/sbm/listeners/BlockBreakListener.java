@@ -14,7 +14,7 @@ public class BlockBreakListener implements Listener {
     @EventHandler
     public void onBlockBreakEvent(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        if(!player.hasPermission(config.getString("permission.sbm.can.break-blocks"))) {
+        if(!player.hasPermission(config.getString("permission.sbm.allow.break-blocks"))) {
            event.setCancelled(true);
         }
     }
