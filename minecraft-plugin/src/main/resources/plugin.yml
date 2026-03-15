@@ -28,3 +28,5 @@ commands:
     aliases:
       - hub
       - spawn
+  maps:
+    description: Manage the Arena Maps.

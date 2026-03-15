@@ -6,6 +6,8 @@ error:
   player-not-found: "Den Spieler %player% gibt es nicht auf dem Server."
   still-closed: "Die %instance% ist noch nicht offen!"
   join-end: "Du kannst nicht mehr teilnehmen."
+  map:
+    not-found: "Diese Karte gibt es nicht!"
   game:
     game-already: "Das Spiel ist schon %state%!"
     round-already: "Die Runde ist bereits %state%!"
@@ -39,6 +41,9 @@ title:
   player-won:
     title: "§6§l§n%player% §7§lhat gewonnen"
     subtitle: ""
+  reamtch:
+    tilte: "§c§lUnentschieden"
+    subtilte: "Karten Änderung."
   
 unit:
   hours: "Stunden"
@@ -93,6 +98,9 @@ info:
   server-state-change: "Der Event-Server wurde %state%."
   only-watch-round: "Diese Runde musst du zuschauen!"
   server-open-countdown: "%server% öffnet in %time% %unit%!"
+  map:
+    updated: "Die Karten wuren aktualisiert."
+    loaded: "Die Karte %map% wurde geladen."
   timer:
     started: "Der Timer wurde gestartet."
     stopped: "Der Timer wurde gestoppt."
@@ -125,6 +133,9 @@ info:
     team-join: "Du bist jetzt in %team%."
     team-leave: "Du bist jetzt nicht mehr in %team%."
     team-manuell-change: "%player% wurde dem %team% %state%"
+  rematch:
+    player-hit: "Der Spieler %player% wurde von der Plattform gestoßen."
+    start: "Es steht unentschieden! Es gibt ein Entscheidungsspiel."
     
 
 items:
