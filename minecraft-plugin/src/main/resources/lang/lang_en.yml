@@ -6,6 +6,8 @@ error:
   player-not-found: "The player %player% does not exist on this server."
   still-closed: "The %instance% is not open yet!"
   join-end: "You can no longer participate."
+  map:
+    not-found: "This Map does not exist!"
   game:
     game-already: "The game is already %state%!"
     round-already: "The round is already %state%!"
@@ -37,8 +39,11 @@ title:
     title: "%sec%"
     subtitle: "Be ready"
   player-won:
-    title: "§6§l§n%player% §7§lhas won"
-    subtitle: ""
+    title: "§6§l§n%player%"
+    subtitle: "has won"
+  reamtch:
+    title: "§c§lTie"
+    subtilte: "Map Switch"
   
 unit:
   hours: "hours"
@@ -93,6 +98,9 @@ info:
   server-state-change: "The event server has been %state%."
   only-watch-round: "You have to spectate this round!"
   server-open-countdown: "%server% opens in %time% %unit%!"
+  map:
+    updated: "The Maps were updated."
+    loaded: "The Map %map% was loaded."
   timer:
     started: "The timer has been started."
     stopped: "The timer has been stopped."
@@ -125,6 +133,9 @@ info:
     team-join: "You are now in %team%."
     team-leave: "You are no longer in %team%."
     team-manuell-change: "%player% was %state% to/from %team%"
+  rematch:
+    player-hit: "The Player %player% has been kicked from the platform!"
+    start: "It's a Tie! Tie-Breaker initiated."
     
 
 items:
