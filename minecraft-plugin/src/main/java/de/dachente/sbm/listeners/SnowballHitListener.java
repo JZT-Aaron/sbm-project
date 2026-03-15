@@ -1,17 +1,16 @@
 package de.dachente.sbm.listeners;
 
-import de.dachente.sbm.main.Main;
 import de.dachente.sbm.managers.TeamManager;
+import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.enums.Team;
 
-import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.inventory.ItemStack;
+
 
 public class SnowballHitListener implements Listener {
 
@@ -34,21 +33,18 @@ public class SnowballHitListener implements Listener {
                 snowball.getWorld().dropItem(snowball.getLocation(), snowball.getItem());
                 return;
             }
-            ItemStack snowballItem = snowball.getItem();
-            if(hitPlayer.getHealthScale() <= 2) {
-                snowballItem.setAmount(3);
-            }
-            if(team == Team.BLUE) {
-                player.getWorld().dropItem(new Location(Main.arena, 0.5, 3, 7.5), snowballItem);
-            }
-            if(team == Team.RED) {
-                player.getWorld().dropItem(new Location(Main.arena, 0.5,3,-6.5), snowballItem);
-            }
+            int amount = 1;
+
+            if(hitPlayer.getHealthScale() <= 2) amount = 2;
+            
+            Game.dropBonusSnowball(team, amount);
+           
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 5, 1);
             return;
         }
 
         snowball.getWorld().dropItem(snowball.getLocation(), snowball.getItem());
-
     }
+
+    
 }

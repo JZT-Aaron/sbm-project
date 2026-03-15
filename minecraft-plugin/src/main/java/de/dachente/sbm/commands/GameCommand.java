@@ -15,16 +15,14 @@ import static de.dachente.sbm.managers.LanguageManager.getText;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
+
+import com.google.common.primitives.Ints;
 
 public class GameCommand implements CommandExecutor {
 
@@ -123,20 +121,24 @@ public class GameCommand implements CommandExecutor {
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("bonus-snowball") && args.length == 2) {
+        if(args[0].equalsIgnoreCase("bonus-snowball") && args.length >= 2) {
             Team team = Team.getTeamById(args[1]);
+            int amount = 1;
+            if(args.length >= 3) {
+                Integer parsed = Ints.tryParse(args[2]);
+                if(parsed == null) {
+                    Info.sendLangError("syntax-error", player, "%syntax%", "/game bonus-snowball <amount>");
+                    return true;
+                }
+                amount = parsed;
+            }
+
             if(team == null) {
                 Info.sendLangError("team.not-found", player);
                 return true;
             }
-            Location l = null;
-            if(Team.BLUE == team) {
-                l = new Location(Main.arena, 0.5, 3, 7.5);
-            }
-            if(Team.RED == team) {
-                l = new Location(Main.arena, 0.5, 3, -6.5);
-            }
-            Main.arena.dropItemNaturally(l, new ItemStack(Material.SNOWBALL));
+
+            Game.dropBonusSnowball(team, amount);
             Info.sendInfo("Snowball dropped", "§aDev-Cmd", player);
             return true;
         }

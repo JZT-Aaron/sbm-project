@@ -16,14 +16,9 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -195,7 +190,8 @@ public class Game {
             if(player == null) return;
             livingPlayers.put(map.getKey(), map.getValue());
             player.getInventory().clear();
-            ItemStack snowball = new ItemStack(Material.SNOWBALL);
+            TeamManager.setTeamChestPlate(player);
+            ItemStack snowball = Game.snowball;
             snowball.setAmount(2);
             player.getInventory().addItem(snowball);
             player.setHealthScale(6);
@@ -510,6 +506,41 @@ public class Game {
 
     public static boolean isRunning() {
         return (Game.state().equals(GameState.RUNNING_MATCH) || Game.state().equals(GameState.RUNNING_REMATCH));
+    }
+
+    public static void dropBonusSnowball(Team team, int amount) {
+        List<Location> locs = Main.parseList(config.getString("spawn-points.snowball." + team.getId()));
+        Block dropperBlock = locs.get(0).getBlock();
+        Block lampBlock = locs.get(1).getBlock();
+
+        if(dropperBlock.getType() != Material.DROPPER) throw new IllegalArgumentException("Cords have to refer to DROPPER.");
+        if(lampBlock.getType() != Material.REDSTONE_LAMP) throw new IllegalArgumentException("Cords have to refer to REDSTONE_LAMP.");
+
+        Dropper dropper = (Dropper) dropperBlock.getState();
+        Lightable lamp = (Lightable) lampBlock.getBlockData();
+ 
+        new BukkitRunnable() {
+            int count = 0;
+
+            public void run() {
+                if(count >= amount) {
+                    this.cancel();
+                    return;
+                } 
+                dropper.getInventory().addItem(Game.snowball);
+                dropper.drop();
+                dropper.update();
+                lamp.setLit(true);
+                lampBlock.setBlockData(lamp);
+
+                Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
+                    lamp.setLit(false);
+                    lampBlock.setBlockData(lamp);
+                }, 5L);
+                
+                count++;
+            }
+        }.runTaskTimer(Main.getPlugin(), 0L, 10L);
     }
 
     /*public static String decoeSekToMinSek(int sek) {
