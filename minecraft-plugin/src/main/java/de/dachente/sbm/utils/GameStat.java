@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.google.gson.reflect.TypeToken;
 
+import de.dachente.sbm.utils.enums.GameMap;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Status;
@@ -18,7 +19,8 @@ public enum GameStat {
     TEAM_HEARTS("team-hearts", new TypeToken<Map<Team, Integer>>(){}.getType(), new HashMap<>()),
     GAME_END_TIMESTAMP("game-end-timestamp", Long.class, null),
     PLAYER_STATUS("player-status", new TypeToken<Map<String, Status>>(){}.getType(), new HashMap<>()),
-    PLAYER_LANGUAGE("player-language", new TypeToken<Map<String, Language>>(){}.getType(), new HashMap<>());
+    PLAYER_LANGUAGE("player-language", new TypeToken<Map<String, Language>>(){}.getType(), new HashMap<>()),
+    LOADED_MAP("loaded-map", GameMap.class, GameMap.GAME);
     
 
     private final String redisKey;

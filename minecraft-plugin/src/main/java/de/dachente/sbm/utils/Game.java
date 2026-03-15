@@ -180,6 +180,7 @@ public class Game {
     }
     
     public static void beginRound() {
+        MapManager.ifNotloadMap(GameMap.GAME);
         BossBarManager.setVisible(true);
         for(Player all : Main.arena.getPlayers()) BossBarManager.addPlayer(all);
         GameRepeat.start();
@@ -286,11 +287,7 @@ public class Game {
         setLivingPlayers(new HashMap<>());
         setTeamHearts(new HashMap<>());
         GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());
-        for(Entity entity : Main.arena.getEntities()) {
-            if(!entity.getType().equals(EntityType.ITEM) ||
-                    !(entity.getLocation().distance(new Location(Main.arena, 0.5, 0, 0)) <= 20)) continue;
-            entity.remove();
-        }
+        Main.clearDroppedItems();
     }
     
     public static void hardReset() {
