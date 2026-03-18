@@ -29,7 +29,7 @@ public class InteractListener implements Listener {
         Player player = event.getPlayer();
         if(event.getItem() == null) return;
         if(!((player.hasPermission(config.getString("permission.sbm.allow.item-move")) && player.getGameMode().equals(GameMode.CREATIVE)) || (event.getItem().getType().equals(Material.SNOWBALL))
-                && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()))) {
+                && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) || Game.state().equals(GameState.PAUSED)) {
             event.setCancelled(true);
         }
         

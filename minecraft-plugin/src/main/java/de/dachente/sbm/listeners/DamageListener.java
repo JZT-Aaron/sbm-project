@@ -1,6 +1,7 @@
 package de.dachente.sbm.listeners;
 
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.GameState;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,7 +14,7 @@ public class DamageListener implements Listener {
     public void onDamage(EntityDamageEvent event) {
         if(!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
-        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && Game.isRunning()) {
+        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && Game.isRunning() && !Game.state().equals(GameState.PAUSED)) {
             event.setDamage(0);
             return;
         }

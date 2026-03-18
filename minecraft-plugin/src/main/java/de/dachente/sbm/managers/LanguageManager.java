@@ -151,6 +151,10 @@ public class LanguageManager {
         return replacePlaceholdersSmart(text, language, true, placeholders);
     }
 
+    public static String replacePlaceholdersSmart(String text, UUID uuid, boolean changeColors, String... placeholders) {
+        return replacePlaceholdersSmart(text, getLanguage(uuid), changeColors, placeholders);
+    }
+
     public static String replacePlaceholdersSmart(String text, UUID uuid, String... placeholders) {
         return replacePlaceholdersSmart(text, getLanguage(uuid), placeholders);
     }
@@ -160,8 +164,22 @@ public class LanguageManager {
         String[] placeholders = gPlaceholders.clone();
         if(text == null || placeholders.length % 2 != 0) throw new IllegalArgumentException("Please use right Argurments for Placeholders");
         for(int i = 1; i < placeholders.length; i+=2) {
-            if(!placeholders[i].startsWith("@")) continue;
-            placeholders[i] = getText(placeholders[i].replace("@", ""), language);
+            if(!placeholders[1].contains("@")) continue;
+            if(placeholders[i].startsWith("@")) {
+                placeholders[i]  = getText(placeholders[i].replace("@", ""), language);
+                continue;
+            }
+            String[] words = placeholders[i].split(" ");
+            placeholders[i] = "";
+            for(int w= 0; w < words.length; w++) {
+                if(words[w].startsWith("@")) {
+                    words[w] = getText(words[i].replace("@", ""), language);
+                }
+                if(words[w].contains("§")) placeholders[i] = placeholders[i] + words[w];
+                else placeholders[i] = placeholders[i] + words[w] + " ";
+            }
+            
+            placeholders[i] = placeholders[i].trim();
         }
         text = replacePlaceholders(text, changeColors, placeholders);
         return text;

@@ -13,7 +13,6 @@ public class GameStats {
     private static final RedisManager redisManager = Main.getRedisManager();
     private static Map<GameStat, Object> values = new EnumMap<>(GameStat.class);
 
-    @SuppressWarnings("unchecked")
     public static <T> T get(GameStat stat) {
         return (T) values.getOrDefault(stat, stat.getDefaultValue());
     }

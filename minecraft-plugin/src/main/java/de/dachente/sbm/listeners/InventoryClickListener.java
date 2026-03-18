@@ -33,6 +33,7 @@ public class InventoryClickListener implements Listener {
         }
 
         String id = ItemBuilder.getTagData(item);
+        if(id == null) return;
 
         if(id.contains("use-camera")) {
             String cameraId = id.replace("use-", "");

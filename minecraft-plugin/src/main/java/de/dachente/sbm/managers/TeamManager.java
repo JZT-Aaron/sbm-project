@@ -77,6 +77,7 @@ public class TeamManager {
         teamsPlayer.remove(uuid);
         updateTeamsPlayers(teamsPlayer);
 
+        if(player == null) return;
         Game.setViewer(player);
         UUID rUuid = UUID.fromString(uuid);
         Info.sendLangInfo("team.team-leave", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));

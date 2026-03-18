@@ -1,7 +1,6 @@
 package de.dachente.sbm.managers;
 
 import static de.dachente.sbm.managers.LanguageManager.getText;
-import static de.dachente.sbm.managers.LanguageManager.replacePlaceholders;
 import static de.dachente.sbm.managers.LanguageManager.replacePlaceholdersSmart;
 
 import java.time.Duration;
@@ -50,8 +49,8 @@ public class Info {
 
     public static void showLangTitle(String id, Player player, TitleTime titleTime, String... placeholders) {
         UUID uuid = player.getUniqueId();
-        String text = replacePlaceholders(getText("title." + id + ".title", uuid), false, placeholders);
-        String subtitle = replacePlaceholders(getText("title." + id + ".subtitle", uuid), false, placeholders);
+        String text = replacePlaceholdersSmart(getText("title." + id + ".title", uuid), uuid, false, placeholders);
+        String subtitle = replacePlaceholdersSmart(getText("title." + id + ".subtitle", uuid), uuid, false, placeholders);
         showTitle(text, subtitle, titleTime, player);
     }
 

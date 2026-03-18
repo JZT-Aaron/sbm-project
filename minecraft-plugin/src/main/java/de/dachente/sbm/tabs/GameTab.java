@@ -29,9 +29,12 @@ public class GameTab implements TabCompleter {
             if(Game.isRunning()) {
                 tab.add("stop");
             }
-            tab.add("round");
+            tab.add("start");
+            tab.add("pause");
+            tab.add("resume");
             tab.add("gate");
             tab.add("dead");
+            tab.add("reset");
 
             tab.add("bonus-snowball");
             tab.add("game-joining");
@@ -63,9 +66,6 @@ public class GameTab implements TabCompleter {
             if(args[0].equalsIgnoreCase("game-joining")) {
                 tab.add("on");
                 tab.add("off");
-            }
-            if(args[0].equalsIgnoreCase("round")) {
-                tab.add("start");
             }
             return tab;
         }

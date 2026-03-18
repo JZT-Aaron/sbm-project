@@ -14,13 +14,11 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 public class DamageByEntityListener implements Listener {
 
-    //TODO: Fix Only One Team Damager
-
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
         if(!(event.getEntity() instanceof Player player)) return;
 
-        if(!(Game.isRunning() && Game.getLivingPlayers().containsKey(player.getUniqueId().toString()))) {
+        if(!(Game.isRunning() && Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) || Game.state().equals(GameState.PAUSED)) {
             event.setCancelled(true);
             return;
         }
@@ -33,8 +31,7 @@ public class DamageByEntityListener implements Listener {
         Player damager = null;
 
         if(event.getDamager() instanceof Snowball snowball) if(snowball.getShooter() instanceof Player shooter) damager = shooter;
-        if(event.getDamager() instanceof Player newDamager) damager = newDamager;
-        
+        else return;
 
         if(damager == null) throw new IllegalArgumentException("A Game hit without shooter was detected.");
         
@@ -46,7 +43,10 @@ public class DamageByEntityListener implements Listener {
         if(Game.isRunning() && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
             boolean isKilled = (player.getHealthScale() <= 2);
             if(isKilled) Game.deadMode(player);
-            else player.setHealthScale(player.getHealthScale()-2);
+            else {
+                player.setHealthScale(player.getHealthScale()-2);
+                Game.respawnPlayer(player);
+            } 
             
             Info.sendLangInfo("event." + (isKilled ? "player-died" : "player-hit"), "%target%", team.getChatColor() + player.getName(), "%damager%", TeamManager.getOppositeTeam(team).getChatColor() + damager.getName());
             
