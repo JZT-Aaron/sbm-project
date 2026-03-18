@@ -76,30 +76,54 @@ public class GameCommand implements CommandExecutor {
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("round")) {
-            if(args.length < 2) {
-                Info.sendLangError("syntax-error", player, "%syntax%", "/game round start [now]");
+        if(args[0].equalsIgnoreCase("start")) {
+            if((TeamManager.getTeamPlayers(Team.RED).size()*TeamManager.getTeamPlayers(Team.BLUE).size()) < 1) {
+                Info.sendLangError("game.not-enough-players", player);
+                return true;
             }
-            if(args[1].equalsIgnoreCase("start")) {
-                if((TeamManager.getTeamPlayers(Team.RED).size()*TeamManager.getTeamPlayers(Team.BLUE).size()) < 1) {
-                    Info.sendLangError("game.not-enough-players", player);
-                    return true;
-                }
-                if(Game.isRunning()) {
-                    Info.sendLangError("game.round-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
-                    return true;
-                }   
-                if(args.length == 3 && args[2].equalsIgnoreCase("now")) {
-                    Game.beginRound();
-                    return true;
-                }
-                Game.startTimer();
-                Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.started", player.getUniqueId()));
-            } 
+            if(Game.isRunning()) {
+                Info.sendLangError("game.round-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
+                return true;
+            }   
+            if(args.length == 2 && args[1].equalsIgnoreCase("now")) {
+                Game.beginRound();
+                return true;
+            }
+            Game.startTimer();
+            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.started", player.getUniqueId()));
+        }
+
+        if(args[0].equalsIgnoreCase("respawn")) {
+            Game.respawnPlayer(player);
+        }
+        
+        if(args[0].equalsIgnoreCase("pause")) {
+            if(!Game.isRunning()) {
+                Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
+                return true;
+            }
+            Game.pause();
+            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.paused", player.getUniqueId()));
             return true;
         }
 
-        // When production add confirm
+        if(args[0].equalsIgnoreCase("resume")) {
+            if(!Game.state().equals(GameState.PAUSED)) {
+                Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.paused", player.getUniqueId()));
+                return true;
+            }
+            Game.resume();
+            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.resumed", player.getUniqueId()));
+            return true;
+        }
+
+        if(args[0].equalsIgnoreCase("reset")) {
+            Game.resetRound();
+            Info.sendInfo("Reset Complete", "§aDev-Cmd");
+            return true;
+        }
+        
+        //TODO When production add confirm
         if(args[0].equalsIgnoreCase("hard-reset")) {
             Game.hardReset();
             Info.sendInfo("Hard Reset Complete", "§aDev-Cmd");
