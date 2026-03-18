@@ -4,12 +4,20 @@ import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.enums.Team;
 
+import java.util.List;
+
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.util.Vector;
 
 
 public class SnowballHitListener implements Listener {
@@ -43,7 +51,39 @@ public class SnowballHitListener implements Listener {
             return;
         }
 
-        snowball.getWorld().dropItem(snowball.getLocation(), snowball.getItem());
+        Location dropLocation = snowball.getLocation();
+
+        Block block = event.getHitBlock();
+        BlockFace blockFace = event.getHitBlockFace();
+
+        if(block != null && blockFace != null) {
+            dropLocation = block.getLocation().add(0.5, 0.5, 0.5);
+
+            Vector offest = blockFace.getDirection().multiply(1.1);
+            dropLocation.add(offest);
+        }
+
+        snowball.getWorld().dropItemNaturally(dropLocation, snowball.getItem());
+
+        List<Item> snowballs = dropLocation.getNearbyEntities(0.5, 0.5, 0.5).stream().filter((entity) -> {
+            if(entity instanceof Item item) return (item.getItemStack().getType() == Material.SNOWBALL);
+            return false; 
+        }).map((enity) -> (Item) enity).toList();
+
+        Vector vector = snowball.getVelocity();
+
+        if(blockFace != null) {
+            Vector blockFaceVector = blockFace.getDirection();
+
+            double dotProduct = vector.dot(blockFaceVector);
+            vector = vector.subtract(blockFaceVector.multiply(2* dotProduct));
+        }
+        vector.normalize();
+        vector.multiply(0.5);
+        
+        for(Item cSnowball : snowballs) {
+            cSnowball.setVelocity(vector);
+        }
     }
 
     
