@@ -8,9 +8,11 @@ import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.enums.Server;
 import de.dachente.sbm.utils.enums.Status;
-import de.dachente.sbm.utils.enums.Team;
 import net.kyori.adventure.text.Component;
 
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -21,8 +23,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public class JoinListener implements Listener {
 
     FileConfiguration config = Main.getPlugin().getConfig();
-
-    //TODO: Left Player hearts get distributed and then redirected.
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
@@ -35,29 +35,41 @@ public class JoinListener implements Listener {
             player.setGameMode(GameMode.ADVENTURE);
         }
 
-        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName())) {
-            if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
-            if(!Game.getLivingPlayers().containsKey(uuid)) {
-                Game.setGameServerHotbar(player);
-                if(TeamManager.isInTeam(player)) StatusManger.setPlayerStatus(Status.DEAD, player);
-                else StatusManger.setPlayerStatus(Status.WATCHING, player);
-            } 
-            if(Game.isRunning()) BossBarManager.addPlayer(player);
-        }
-
         if(player.getWorld().getName().equalsIgnoreCase(Main.lobby.getName())) {
             Main.joinServer(Server.LOBBY, player, false);
+            return;
         }
 
         StatusManger.updatePlayerStatus(player);
 
-        if(TeamManager.getTeamsPlayer().containsKey(uuid)) {
-            Team team = TeamManager.getTeamsPlayer().get(uuid);
-            if(!Game.leftTeamPlayers.contains(uuid) && Game.getLivingPlayers().containsKey(uuid)) {
-                Info.sendLangInfo("only-watch-round", player);
-                player.teleport(Main.arena.getSpawnLocation());
+        if(TeamManager.getTeamsPlayer().containsKey(uuid) && Game.getLeftPlayers().contains(uuid)) {
+            Game.HandoverContext handoverContext = Game.getLeftPlayerHandoverContext(player.getUniqueId());
+            if(handoverContext.proxyUuid() == null) {
+                Game.addToLivingPlayers(uuid);
+                return;
             }
-            TeamManager.getTeamPlayers(team).add(uuid);
+            Player proxyPlayer = Bukkit.getPlayer(UUID.fromString(handoverContext.proxyUuid()));
+            Integer leftProxyHearts = ((int) proxyPlayer.getHealthScale()) - handoverContext.proxyHearts();
+            Info.sendInfo("Hearts: " + leftProxyHearts);
+            Game.removeLeftPlayer(player);
+            if(leftProxyHearts <= 0) {
+                Info.sendLangInfo("only-watch-round", player);
+                Game.setViewer(proxyPlayer);
+                StatusManger.setPlayerStatus(Status.DEAD, proxyPlayer);
+                return;
+            } else {
+                player.setHealthScale(leftProxyHearts);
+                proxyPlayer.setHealthScale(handoverContext.proxyHearts());
+                Game.addToLivingPlayers(uuid);
+                Game.respawnPlayer(player);
+            }
+            return;
         }      
+
+        if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName())) {
+            if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
+            Game.setViewer(player);
+            if(Game.isRunning()) BossBarManager.addPlayer(player);
+        }        
     }
 }

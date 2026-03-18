@@ -6,12 +6,15 @@ import de.dachente.sbm.managers.Info;
 import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.Team;
 import net.kyori.adventure.text.Component;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.ItemStack;
 
 public class QuitListener implements Listener {
 
@@ -26,9 +29,17 @@ public class QuitListener implements Listener {
             BossBarManager.removePlayer(player);
         }
 
-        if(TeamManager.getTeamsPlayer().containsKey(uuid)) {
-            Game.leftTeamPlayers.add(uuid);
+        if(Game.getLivingPlayers().containsKey(uuid)) {
             Game.removeFromLivingPlayers(uuid);
+            Game.addLeftPlayer(player);
+            if(player.getInventory().getContents().length > 0)
+                for(ItemStack item : player.getInventory().getContents()) {
+                    if(item == null || !item.getType().equals(Material.SNOWBALL)) continue;
+                    player.getInventory().remove(item);
+                    Main.arena.dropItemNaturally(player.getLocation(), item);
+                }
+            Team team = TeamManager.getTeam(player);
+            Info.sendLangImportantInfo("left-player.add", "%team%", team.getChatColor() + team.getName());
         }
 
         LanguageManager.removeOnline(player.getUniqueId());

@@ -7,5 +7,6 @@ public enum GameState {
     STARTING_REMATCH(),
     RUNNING_MATCH(),
     RUNNING_REMATCH(),
-    WAITING();
+    WAITING(),
+    PAUSED();
 }

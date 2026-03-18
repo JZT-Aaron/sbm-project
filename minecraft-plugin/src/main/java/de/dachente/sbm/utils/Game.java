@@ -32,6 +32,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class Game {
@@ -42,15 +43,13 @@ public class Game {
 
     public static boolean isSnowing = true;
     
-    public static List<String> leftTeamPlayers = new ArrayList<>();
     public static List<ArmorStand> cameraPoints = new ArrayList<>();
+
+    private static GameState beforePause;
 
     public static ItemStack snowball = new ItemStack(Material.SNOWBALL);
 
-    public static int blueHearts = 0;
-    public static int redHearts = 0;
-
-    private static final int ROUND_LENGHT = 1;
+    private static final int ROUND_LENGHT = 40;
 
     public static void setSnowing(boolean snowing) {
         isSnowing = snowing;
@@ -136,9 +135,10 @@ public class Game {
         if(isMatch) {
             MapManager.ifNotloadMap(GameMap.GAME);
             GateManager.setGateActive(true);
-        } 
+            Info.sendLangImportantInfo("timer.spread-timer-start", "%sec%", "§b10");
+        } else Info.sendLangInfo("rematch.tutorial");
         
-        Info.sendLangImportantInfo("timer.spread-timer-start", "%sec%", "§b10");
+        
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 10;
             @Override
@@ -199,16 +199,23 @@ public class Game {
     }
     
     public static void beginRound() {
+        setChunksForceLoaded(true);
         MapManager.ifNotloadMap(GameMap.GAME);
         BossBarManager.setVisible(true);
+        for(Team team : Team.values()) setNewTeamRespawnPoint(team);
         for(Player all : Main.arena.getPlayers()) BossBarManager.addPlayer(all);
         GameRepeat.start();
         Map<String, Team> livingPlayers = new HashMap<>();
         for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
+            Team team = map.getValue();
             Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
+            if(player == null) {
+                Info.sendLangImportantInfo("left-player.game-start", "%team%", team.getChatColor() + team.getName());
+                addLeftPlayer(UUID.fromString(map.getKey()), 3);
+                return;
+            }
             StatusManger.setPlayerStatus(Status.PLAYING, player);
-            if(player == null) return;
-            livingPlayers.put(map.getKey(), map.getValue());
+            livingPlayers.put(map.getKey(), team);
             player.getInventory().clear();
             TeamManager.setTeamChestPlate(player);
             ItemStack snowball = Game.snowball;
@@ -254,6 +261,9 @@ public class Game {
         }
         Game.updateTeamHearts();
         Game.setGameStatus(GameState.RUNNING_MATCH);
+
+        List<Location> poses = Main.parseList(config.getString("spawn-points.respawn-points.barrier"));
+        replaceBocks(poses.get(0), poses.get(1), Material.BARRIER, Material.AIR);
     }
 
     public static void nextRound(Team wonTeam) {
@@ -290,7 +300,6 @@ public class Game {
             if(TeamManager.getTeamPlayers(winningTeam).size() <= 1) {
                 winner(Bukkit.getPlayer(UUID.fromString(TeamManager.getTeamPlayers(winningTeam).get(0))));
             } else {
-            
                 Info.sendLangImportantInfo("event.team-won", "%team%", "@team." + winningTeam.getId());
                 nextRound(winningTeam);
             } 
@@ -298,6 +307,7 @@ public class Game {
     }
 
     public static void resetRound() {
+        MapManager.loadMap(GameMap.GAME);
         Bukkit.getScheduler().cancelTask(taskID);
         Bukkit.getScheduler().cancelTask(taskID2);
         BossBarManager.setVisible(false);
@@ -313,6 +323,10 @@ public class Game {
         setTeamHearts(new HashMap<>());
         GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());
         Main.clearDroppedItems();
+        GameStats.set(GameStat.NEXT_RESPAWN_POINT, new HashMap<>());
+        setChunksForceLoaded(false);
+        clearLeftPlayer();
+        setGameStatus(GameState.WAITING);
     }
     
     public static void hardReset() {
@@ -321,20 +335,29 @@ public class Game {
         for(Team team : Team.values()) TeamManager.clearTeam(team);
     }
 
+    public static void pause() {
+        Info.sendLangImportantInfo("paused");
+        beforePause = state();
+        setGameStatus(GameState.PAUSED);
+    }
+  
+    public static void resume() {
+        setGameStatus(beforePause);
+        Info.sendLangImportantInfo("game.game-state-change", "%state%", "@state.resumed");
+    }
+    
     public static void winner(Player player) {
         resetRound();
+        MapManager.loadMap(GameMap.WINNER);
         Info.sendLangImportantInfo("event.player-won", "%player%", "§6" + player.getName());
         for(Player all : Main.arena.getPlayers()) {
             Info.showLangTitle("player-won", "%player%", "" + player.getName());
             all.playSound(all.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 5, 1);
             if(all == player) continue;
-            Location l = all.getLocation();
-            l.setZ(l.getZ()+86.5);
-            all.teleport(l);
             StatusManger.setPlayerStatus(Status.WATCHING, all);
         }
         StatusManger.setPlayerStatus(Status.WON, player);
-        player.teleport(new Location(Main.arena,0.5, 9, 86.5, 90, 0));
+        player.teleport(Main.parseLocation(config.getString("spawn-points.winner"), Main.arena));
     }
 
     public static Location getRematchSpawnLocation(Player player) {
@@ -350,9 +373,7 @@ public class Game {
             if(getLivingPlayers().containsKey(all.getUniqueId().toString())) {
                 //Downset Hearts
                 int currentHearts = (int) all.getHealthScale();
-                all.sendMessage("Current Hearts: " + currentHearts);
                 int newHearts = ((currentHearts+5)/6)*2;
-                all.sendMessage("New Hearts: " + newHearts);
                 all.setHealthScale((double) newHearts);
 
                 Game.updateTeamHearts();
@@ -432,6 +453,7 @@ public class Game {
         updateTeamHearts();
 
         setViewer(player);
+        player.teleport(Main.parseLocation(Main.getPlugin().getConfig().getString("spawn-points.dead." + team.getId()), Main.arena));
         
         if(Game.getLivingPlayers(team).size() <= 0) endRound();
     }
@@ -490,10 +512,17 @@ public class Game {
         GameStats.set(GameStat.LIVING_PLAYERS, livingPlayers);
     }
 
+    public static void addToLivingPlayers(String uuid) {
+        Map<String, Team> livingPlayers = getLivingPlayers();
+        livingPlayers.put(uuid, TeamManager.getTeam(uuid));
+        setLivingPlayers(livingPlayers);
+        updateTeamHearts();
+    }
+    
     public static void removeFromLivingPlayers(String uuid) {
         Map<String, Team> livingPlayers = getLivingPlayers();
         livingPlayers.remove(uuid);
-        GameStats.set(GameStat.LIVING_PLAYERS, livingPlayers);
+        setLivingPlayers(livingPlayers);
     }
 
     public static List<String> getLivingPlayers(Team team) {
@@ -526,7 +555,6 @@ public class Game {
         if(lampBlock.getType() != Material.REDSTONE_LAMP) throw new IllegalArgumentException("Cords have to refer to REDSTONE_LAMP.");
 
         Dropper dropper = (Dropper) dropperBlock.getState();
-        Lightable lamp = (Lightable) lampBlock.getBlockData();
  
         new BukkitRunnable() {
             int count = 0;
@@ -539,12 +567,10 @@ public class Game {
                 dropper.getInventory().addItem(Game.snowball);
                 dropper.drop();
                 dropper.update();
-                lamp.setLit(true);
-                lampBlock.setBlockData(lamp);
+                setLampLit(lampBlock, true);
 
                 Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> {
-                    lamp.setLit(false);
-                    lampBlock.setBlockData(lamp);
+                    setLampLit(lampBlock, false);
                 }, 5L);
                 
                 count++;
@@ -552,6 +578,138 @@ public class Game {
         }.runTaskTimer(Main.getPlugin(), 0L, 10L);
     }
     
+    public record HandoverContext(String proxyUuid, int playerHearts, int proxyHearts) {}
+    
+    public static void clearLeftPlayer() {
+        Map<String, HandoverContext> leftPlayersMap = getLeftPlayersMap();
+        leftPlayersMap.clear();
+        GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
+    }
+
+    public static void addLeftPlayer(Player player) {
+        addLeftPlayer(player.getUniqueId(), player.getHealthScale());
+    }
+
+    public static void addLeftPlayer(UUID playerUUID, double playerHearth) {
+        Player proxyPlayer = pickProxyPlayer(TeamManager.getTeam(playerUUID.toString()));
+
+        Info.sendInfo("ProxyPlayer: " + proxyPlayer);
+
+        String uuid = null;
+        Integer proxyHearts = 0;
+        if(proxyPlayer == null) pause();
+        else {
+            uuid = proxyPlayer.getUniqueId().toString();
+            proxyHearts = (int) proxyPlayer.getHealthScale();
+        }
+
+        Map<String, HandoverContext> leftPlayersMap = new HashMap<>();
+        HandoverContext handoverContext = new HandoverContext(uuid, (int) playerHearth, proxyHearts);
+
+        leftPlayersMap.put(playerUUID.toString(), handoverContext);
+        GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
+
+        if(proxyPlayer == null) return;
+
+        double newProxyHearts = proxyPlayer.getHealthScale()+playerHearth;
+
+        proxyPlayer.setHealthScale(newProxyHearts);
+    }
+
+    public static boolean isProxyPlayer(String uuid) {
+        for(Entry<String, HandoverContext> entry : getLeftPlayersMap().entrySet()) if(entry.getValue().proxyUuid.equals(uuid)) return true;
+        return false;
+    }
+
+    private static Player pickProxyPlayer(Team team) {
+        Map<String, Integer> hearts = new HashMap<>();
+        for(String livingUuid : Game.getLivingPlayers(team)) {
+            if(isProxyPlayer(livingUuid)) continue;
+            Player player = Bukkit.getPlayer(UUID.fromString(livingUuid));
+            if(player == null) throw new IllegalArgumentException("Player null in Living Players List. Please Contact the developer.");
+            hearts.put(livingUuid, (int) player.getHealthScale());
+        }
+
+        if(hearts.isEmpty()) return null;
+
+        Integer minHearts = hearts.values().stream().min(Integer::compare).orElse(null);
+        if(minHearts == null) throw new IllegalArgumentException("No hearts found!");
+
+        List<String> lowPlayers = hearts.entrySet().stream()
+            .filter(entry -> entry.getValue().equals(minHearts))
+            .map(Map.Entry::getKey).toList();
+
+        return Bukkit.getPlayer(UUID.fromString(lowPlayers.stream().findAny().orElse(null)));
+    }
+
+    public static void removeLeftPlayer(Player player) {
+        Map<String, HandoverContext> leftPlayersMap = getLeftPlayersMap();
+        leftPlayersMap.remove(player.getUniqueId().toString());
+        GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
+    }
+
+    public static Map<String, HandoverContext> getLeftPlayersMap() {
+        return GameStats.get(GameStat.LEFT_TEAM_PLAYERS);
+    }
+
+    public static List<String> getLeftPlayers() {
+        return new ArrayList<>(getLeftPlayersMap().keySet());
+    }
+
+    public static HandoverContext getLeftPlayerHandoverContext(UUID uuid) {
+        return getLeftPlayersMap().get(uuid.toString());
+    }
+
+    public static void setChunksForceLoaded(boolean loaded) {
+        for(Chunk chunk : Main.getForceLoadChunks()) chunk.setForceLoaded(loaded);
+    }
+
+    public static List<Location> getRespawnPoints(Team team) {
+        return Main.parseList(config.getString("spawn-points.respawn-points." + team.getId()));
+    }
+
+    public static void setNewTeamRespawnPoint(Team team) {
+        Map<Team, Integer> nextTeamRespawnPoints = GameStats.get(GameStat.NEXT_RESPAWN_POINT);
+        Random random = new Random();
+
+        int oldLamp = nextTeamRespawnPoints.getOrDefault(team, -1);
+                
+        int newLamp = random.nextInt(getRespawnPoints(team).size()-1);
+        if(newLamp>= oldLamp) newLamp++;
+        nextTeamRespawnPoints.put(team, newLamp);
+        GameStats.set(GameStat.NEXT_RESPAWN_POINT, nextTeamRespawnPoints);
+        setLampLit(getRespawnPoints(team).get(newLamp).getBlock(), true);
+
+        if(oldLamp >= 0 && oldLamp != newLamp) Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () ->  {
+            if(getNextTeamRespawnPointId(team) != oldLamp) setLampLit(getRespawnPoints(team).get(oldLamp).getBlock(), false);
+        }, 20L);
+    }
+
+    public static void setLampLit(Block lamp, boolean lit) {
+        Lightable lightable = (Lightable) lamp.getBlockData();
+        lightable.setLit(lit);
+        lamp.setBlockData(lightable);
+    }
+
+    public static Integer getNextTeamRespawnPointId(Team team) {
+        return ((Map<Team, Integer>) GameStats.get(GameStat.NEXT_RESPAWN_POINT)).get(team);
+    }
+
+    public static Location getNextTeamRespawnPoint(Team team) {
+        return getRespawnPoints(team).get(getNextTeamRespawnPointId(team));
+    }
+
+    public static void respawnPlayer(Player player) {
+        Team team = TeamManager.getTeam(player);
+        Location loc = getNextTeamRespawnPoint(team);
+        if(getNextTeamRespawnPoint(team) == null) setNewTeamRespawnPoint(team);
+        loc.setY(loc.getY()+1);
+        loc.add(0.5, 0, 0.5);
+        player.teleport(loc);
+        Main.arena.spawnParticle(Particle.CLOUD, player.getLocation(), 150, 0, 1, 0, 1);
+        setNewTeamRespawnPoint(team);
+    }
+
     /*public static String decoeSekToMinSek(int sek) {
         int min = sek/60;
         int mintesInSek = min*60;
