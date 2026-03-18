@@ -10,6 +10,7 @@ error:
     not-found: "This Map does not exist!"
   game:
     game-already: "The game is already %state%!"
+    round-not-already: "The round is not %state%!"
     round-already: "The round is already %state%!"
     not-enough-players: "Every team needs at least one player!"
   timer:
@@ -41,9 +42,12 @@ title:
   player-won:
     title: "§6§l§n%player%"
     subtitle: "has won"
-  reamtch:
+  rematch:
     title: "§c§lTie"
-    subtilte: "Map Switch"
+    subtitle: "Map Switch"
+  doom-bell:
+    title: "§cDoom-Bell"
+    subtitle: "%team% §7just lost."
   
 unit:
   hours: "hours"
@@ -73,6 +77,8 @@ state:
   add: "§aadded"
   remove: "§cremoved"
   selected: "selected"
+  paused: "§5Paused"
+  resumed: "§aResumed"
 
 instances:
   game-server: "Game Server"
@@ -96,7 +102,7 @@ info:
   sneak-to-leave: "Sneak to leave."
   game-server-open: "The game server is now open! You can join via the menu or with /game-server."
   server-state-change: "The event server has been %state%."
-  only-watch-round: "You have to spectate this round!"
+  only-watch-round: "You can only watch this round, as all your hearts have been used up!"
   server-open-countdown: "%server% opens in %time% %unit%!"
   map:
     updated: "The Maps were updated."
@@ -136,6 +142,11 @@ info:
   rematch:
     player-hit: "The Player %player% has been kicked from the platform!"
     start: "It's a Tie! Tie-Breaker initiated."
+    tutorial: "Try to knock each other off the platform!"
+  left-player:
+    add: "Team %team% has a new offline player. His hearts have been assigned to a proxy player."
+    game-start: "Team %team% has one offline player. His hearts have been assigned to a substitute player."
+  paused: "The game has been paused, the admins will try to resolve this situation."
     
 
 items:

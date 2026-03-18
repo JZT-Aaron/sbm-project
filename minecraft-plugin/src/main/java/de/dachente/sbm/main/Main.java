@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -26,12 +27,14 @@ import de.dachente.sbm.commands.LobbyCommand;
 import de.dachente.sbm.commands.MapsCommand;
 import de.dachente.sbm.commands.TeamCommand;
 import de.dachente.sbm.listeners.AsyncPlayerPreLoginListener;
+import de.dachente.sbm.listeners.BellRingListener;
 import de.dachente.sbm.listeners.BlockBreakListener;
 import de.dachente.sbm.listeners.BlockRedstoneHandler;
 import de.dachente.sbm.listeners.DamageByEntityListener;
 import de.dachente.sbm.listeners.DamageListener;
 import de.dachente.sbm.listeners.InteractListener;
 import de.dachente.sbm.listeners.InventoryClickListener;
+import de.dachente.sbm.listeners.InventoryOpenListener;
 import de.dachente.sbm.listeners.ItemDropListener;
 import de.dachente.sbm.listeners.JoinListener;
 import de.dachente.sbm.listeners.MoveListener;
@@ -224,6 +227,8 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new MoveListener(), this);
         pluginManager.registerEvents(new ItemDropListener(), this);
         pluginManager.registerEvents(new BlockRedstoneHandler(), this);
+        pluginManager.registerEvents(new InventoryOpenListener(), this);
+        pluginManager.registerEvents(new BellRingListener(), this);
 
         pluginManager.registerEvents(new PlayerToggleSnakeListener(), this);
 
@@ -299,7 +304,22 @@ public final class Main extends JavaPlugin {
         Double[] cords = Arrays.stream(loc.split(","))
                 .map(Double::valueOf)
                 .toArray(Double[]::new);
-        return new Location(world, cords[0], cords[1], cords[2]);
+        Location location = new Location(world, cords[0], cords[1], cords[2]);
+        if(cords.length == 5) {
+            location.setYaw(cords[3].floatValue());
+            location.setPitch(cords[4].floatValue());
+        }
+        return location;
+    }
+
+    public static List<Chunk> getForceLoadChunks() {
+        List<Chunk> chunksList = new ArrayList<>();
+        String[] chunks = Main.getPlugin().getConfig().getString("spawn-points.forceload-chunks").split(";");
+        for(String chunk : chunks) {
+            String[] cords = chunk.split(",");
+            chunksList.add(Main.arena.getChunkAt(Integer.parseInt(cords[0]), Integer.parseInt(cords[1])));
+        }
+        return chunksList;
     }
 
     private void registerCameras() {
@@ -356,7 +376,7 @@ public final class Main extends JavaPlugin {
     public static void clearDroppedItems() {
         for(Entity entity : Main.arena.getEntities()) {
             if(!entity.getType().equals(EntityType.ITEM) ||
-                    (entity.getLocation().distanceSquared(parseLocation(getPlugin().getConfig().getString("arena-center"), arena)) > 40)) continue;
+                    (entity.getLocation().distanceSquared(parseLocation(getPlugin().getConfig().getString("arena-center"), arena)) > 1600)) continue;
             entity.remove();
         }
     }

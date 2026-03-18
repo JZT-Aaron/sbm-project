@@ -10,6 +10,7 @@ error:
     not-found: "Diese Karte gibt es nicht!"
   game:
     game-already: "Das Spiel ist schon %state%!"
+    round-not-already: "Die Runde is noch nicht %state%!"
     round-already: "Die Runde ist bereits %state%!"
     not-enough-players: "Jedes Team braucht mindestes einen Spieler!"
   timer:
@@ -41,9 +42,12 @@ title:
   player-won:
     title: "§6§l§n%player% §7§lhat gewonnen"
     subtitle: ""
-  reamtch:
-    tilte: "§c§lUnentschieden"
-    subtilte: "Karten Änderung."
+  rematch:
+    title: "§c§lUnentschieden"
+    subtitle: "Karten Änderung."
+  doom-bell:
+    title: "§cUntergangsglocke"
+    subtitle: "%team% §7hat verloren"
   
 unit:
   hours: "Stunden"
@@ -73,6 +77,8 @@ state:
   add: "§ahinzugefügt"
   remove: "§centfernt"
   selected: "ausgewählt"
+  paused: "§5Pausiert"
+  resumed: "§aFortgesetzt"
 
 instances:
   game-server: "Game-Server"
@@ -96,7 +102,7 @@ info:
   sneak-to-leave: "Sneake, um zu verlassen."
   game-server-open: "Der Spiel-Server hat jetzt geöffnet! Ihr könnt über das Menü oder mit /game-server beitreten."
   server-state-change: "Der Event-Server wurde %state%."
-  only-watch-round: "Diese Runde musst du zuschauen!"
+  only-watch-round: "Du kannst diese Runde nur noch ansehen, da alle deine Herzen aufgebraucht sind!"
   server-open-countdown: "%server% öffnet in %time% %unit%!"
   map:
     updated: "Die Karten wuren aktualisiert."
@@ -136,6 +142,11 @@ info:
   rematch:
     player-hit: "Der Spieler %player% wurde von der Plattform gestoßen."
     start: "Es steht unentschieden! Es gibt ein Entscheidungsspiel."
+    tutorial: "Versucht euch gegenseitig  von Plattform zu werfen!"
+  left-player:
+    add: "Team %team% hat einen neuen Offline-Spieler. Seine Herzen wurden einem Ersatzspieler zugewiesen."
+    game-start: "Das Team %team% hat §oeinen §7Offline-Spieler. Seine Herzen wurde einem Ersatzspieler zugewiesen."
+  paused: "Das Spiel wurde pausiert, die Admins werden versuche diese Lage zu lösen."
     
 
 items:
