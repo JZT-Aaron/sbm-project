@@ -20,7 +20,7 @@ public class GameServerCommand implements CommandExecutor {
             return true;
         }
 
-        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && !player.isOp()) {
+        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) {
             Info.sendLangError("currently-no-permission", player);
             return true;
         }
