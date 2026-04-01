@@ -32,30 +32,122 @@ public class GameCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(!(sender instanceof Player player)) return true;
-        final String SYNTAX = "/game open/close/round/gate/game-joining [timer start open/close on/off] [start/stop/set open/close ] [<date> <time>]";
+        Player player = null;
+        if(sender instanceof Player) player = (Player) sender; 
+        final String SYNTAX = "/game open/close/round/gate/game-joining/start/pause/resume/reset [timer open/close on/off] [start/stop/set open/close ] [<date> <time>]";
+        final String CONSOLE_SYNTAX = "/game start/pause/resume/reset/open/close/game-joining [<on|off>]";
 
-        if(!player.hasPermission(config.getString("permission.sbm.command.game"))) {
+        //No Permission Check for Sender that is not Player
+        if(player != null && !player.hasPermission(config.getString("permission.sbm.command.game"))) {
             Info.sendLangError("no-permission", player);
             return true;
         }
 
+        //Paramerters are allways requiered
         if(args.length == 0) {
-            Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
+            if(player != null) Info.sendLangError("syntax-error", player, "%syntax%", SYNTAX);
+            else sender.sendMessage("[Error] Please use " + CONSOLE_SYNTAX);
             return true;
         }
 
+        //Start Round
+        if(args[0].equalsIgnoreCase("start")) {
+            if((TeamManager.getTeamPlayers(Team.RED).size()*TeamManager.getTeamPlayers(Team.BLUE).size()) < 1) {
+                if(player != null) Info.sendLangError("game.not-enough-players", player);
+                else sender.sendMessage("§c[Error] Not Enough Players!");
+                return true;
+            }
+            if(Game.isRunning()) {
+                if(player != null) Info.sendLangError("game.round-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
+                else sender.sendMessage("§c[Error] Round already started");
+                return true;
+            }
+            // Dev-Cmd: Skip Game Start Timer
+            if(args.length == 2 && args[1].equalsIgnoreCase("now")) {
+                Game.beginRound();
+                return true;
+            }
+            Game.startTimer();
+            if(player != null) Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.started", player.getUniqueId()));
+            else sender.sendMessage("§aGame started.");
+            return true;
+        }
+
+        if(args[0].equalsIgnoreCase("resume")) {
+            if(!Game.state().equals(GameState.PAUSED)) {
+                if(player != null) Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.paused", player.getUniqueId()));
+                sender.sendMessage("§c[Error] Game is already resumed");
+                return true;
+            }
+            Game.resume();
+            if(player != null) Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.resumed", player.getUniqueId()));
+            else sender.sendMessage("§a[Info] Game was resumed");
+            return true;
+        }
+
+        //Normal Reset
+        if(args[0].equalsIgnoreCase("reset")) {
+            Game.resetRound();
+            if(player != null) Info.sendInfo("Reset Complete", "§aDev-Cmd");
+            else sender.sendMessage("§a[Info] Reset Complete");
+            return true;
+        }
+        
+        if(args[0].equalsIgnoreCase("pause")) {
+            if(!Game.isRunning()) {
+                if(player != null) Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
+                else sender.sendMessage("§c[Error] Game is already paused");
+                return true;
+            }
+            Game.pause();
+            if(player != null) Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.paused", player.getUniqueId()));
+            else sender.sendMessage("§a[Info] Game is Paused");
+            return true;
+        }
+
+        //Allows Joining by the Hotbar Items to Teams
+        if(args[0].equalsIgnoreCase("game-joining") && args.length == 2) {
+            if(!(args[1].equalsIgnoreCase("on") || args[1].equalsIgnoreCase("off"))) {
+                if(player != null) Info.sendLangError("syntax-error", player, "%syntax%", "/game game-joining on/off");
+                else sender.sendMessage("§c[Error] Please use /game game-joining on/off");
+                return true;
+            }
+            boolean isOn = args[1].equalsIgnoreCase("on");
+            Game.setGameStatus(isOn ? GameState.OPEN : GameState.CLOSED);
+            if(player != null) Info.sendLangInfo("game.game-joining", player, "%state%", getText("state." + (isOn ? "unlocked" : "locked"), player.getUniqueId()));
+            else sender.sendMessage("§aGame-Joining Changed");
+            return true;
+        }
+
+
+        // Open/Close Game-Server
         if((args[0].equalsIgnoreCase("open") || args[0].equalsIgnoreCase("close")) && args.length == 1) {
             boolean requestOpen = args[0].equalsIgnoreCase("open");
-            UUID uuid = player.getUniqueId();
+            UUID uuid = player == null ? null : player.getUniqueId();
             String stateId = "state." + (requestOpen ? "opened" : "closed");
             if(Game.isOpen() == requestOpen) {
-                Info.sendLangError("game.game-already", player,  "%state%",LanguageManager.getText(stateId, uuid));
+                if (player != null) Info.sendLangError("game.game-already", player,  "%state%",LanguageManager.getText(stateId, uuid));
+                else sender.sendMessage("Game-Server is already opened/closed");
                 return true;
             }
             if(requestOpen) Game.open();
             else Game.close();
-            Info.sendLangInfo("server-state-change", player, "%state%", LanguageManager.getText(stateId, uuid));
+            if(player != null) Info.sendLangInfo("server-state-change", player, "%state%", LanguageManager.getText(stateId, uuid));
+            else sender.sendMessage("Game-Server opened/closed");
+            return true;
+        }
+
+
+        //From here just Players (No Console) 
+        if(player == null) {
+            sender.sendMessage("§c[Error] Please use " + CONSOLE_SYNTAX);
+            return true;
+        } 
+
+        //End Game Early
+        if(args[0].equalsIgnoreCase("end")) {
+            Game.endRound();
+            Info.sendInfo("Match Ended", "§aDev-Cmd");
             return true;
         }
 
@@ -75,55 +167,8 @@ public class GameCommand implements CommandExecutor {
             Info.sendLangInfo("game." + (team == null ? "gate-change" : "team-gate-change"), player, placeholder.toArray(String[]::new));
             return true;
         }
-
-        if(args[0].equalsIgnoreCase("start")) {
-            if((TeamManager.getTeamPlayers(Team.RED).size()*TeamManager.getTeamPlayers(Team.BLUE).size()) < 1) {
-                Info.sendLangError("game.not-enough-players", player);
-                return true;
-            }
-            if(Game.isRunning()) {
-                Info.sendLangError("game.round-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
-                return true;
-            }   
-            if(args.length == 2 && args[1].equalsIgnoreCase("now")) {
-                Game.beginRound();
-                return true;
-            }
-            Game.startTimer();
-            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.started", player.getUniqueId()));
-        }
-
-        if(args[0].equalsIgnoreCase("respawn")) {
-            Game.respawnPlayer(player);
-        }
-        
-        if(args[0].equalsIgnoreCase("pause")) {
-            if(!Game.isRunning()) {
-                Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.started", player.getUniqueId()));
-                return true;
-            }
-            Game.pause();
-            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.paused", player.getUniqueId()));
-            return true;
-        }
-
-        if(args[0].equalsIgnoreCase("resume")) {
-            if(!Game.state().equals(GameState.PAUSED)) {
-                Info.sendLangError("game.round-not-already", player,  "%state%",LanguageManager.getText("state.paused", player.getUniqueId()));
-                return true;
-            }
-            Game.resume();
-            Info.sendLangInfo("game.game-state-change", player, "%state%", LanguageManager.getText("state.resumed", player.getUniqueId()));
-            return true;
-        }
-
-        if(args[0].equalsIgnoreCase("reset")) {
-            Game.resetRound();
-            Info.sendInfo("Reset Complete", "§aDev-Cmd");
-            return true;
-        }
-        
-        //TODO When production add confirm
+                
+        //Dev-Cmd Complete Reset
         if(args[0].equalsIgnoreCase("hard-reset")) {
             Game.hardReset();
             Info.sendInfo("Hard Reset Complete", "§aDev-Cmd");
@@ -167,16 +212,7 @@ public class GameCommand implements CommandExecutor {
             return true;
         }
 
-        if(args[0].equalsIgnoreCase("game-joining") && args.length == 2) {
-            if(!(args[1].equalsIgnoreCase("on") || args[1].equalsIgnoreCase("off"))) {
-                Info.sendLangError("syntax-error", player, "%syntax%", "/game game-joining on/off");
-                return true;
-            }
-            boolean isOn = args[1].equalsIgnoreCase("on");
-            Game.setGameStatus(isOn ? GameState.OPEN : GameState.CLOSED);
-            Info.sendLangInfo("game.game-joining", player, "%state%", getText("state." + (isOn ? "unlocked" : "locked"), player.getUniqueId()));
-            return true;
-        }
+        
 
         if(args[0].equalsIgnoreCase("winner") && args.length == 2) {
             Player winner = Bukkit.getPlayer(args[1]);
