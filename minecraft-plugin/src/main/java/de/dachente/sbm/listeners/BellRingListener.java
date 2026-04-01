@@ -25,11 +25,14 @@ public class BellRingListener implements Listener {
         Block bell = event.getBlock();
         List<Location> bells = Main.parseList(Main.getPlugin().getConfig().getString("target.pos"));
         if(!bells.contains(bell.getLocation())) return;
-        Game.pause();
+        // Pause game to prevent changes in cames outcome.
+        Game.pause(false);
 
+        // Get Team from Bell Location 
         int teamID = bells.indexOf(bell.getLocation());
         Team team = teamID == 0 ? Team.BLUE : Team.RED;
-         
+        
+        // Ring Bell 3 Times
         new BukkitRunnable() {
             int count = 3;
             public void run() {
@@ -40,6 +43,7 @@ public class BellRingListener implements Listener {
         }.runTaskTimer(Main.getPlugin(), 0, 20);
         Info.showLangTitle("doom-bell", "%team%", team.getChatColor() + " @team." + team.getId());
 
+        // After Bell is Rang 3 Time Doomed Team is Eliminated.
         new BukkitRunnable() {
             public void run() {
                 for(String teamPlayerUUid : Game.getLivingPlayers(team)) {
@@ -52,7 +56,6 @@ public class BellRingListener implements Listener {
                 }
             }
         }.runTaskLater(Main.getPlugin(), 80);
-        
     }
     
 }

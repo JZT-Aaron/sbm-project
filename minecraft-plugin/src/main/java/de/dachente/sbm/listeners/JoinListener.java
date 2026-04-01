@@ -42,6 +42,8 @@ public class JoinListener implements Listener {
 
         StatusManger.updatePlayerStatus(player);
 
+
+        //Proxy Player System Join
         if(TeamManager.getTeamsPlayer().containsKey(uuid) && Game.getLeftPlayers().contains(uuid)) {
             Game.HandoverContext handoverContext = Game.getLeftPlayerHandoverContext(player.getUniqueId());
             if(handoverContext.proxyUuid() == null) {
@@ -66,6 +68,7 @@ public class JoinListener implements Listener {
             return;
         }      
 
+        // Player Join in Worlds
         if(player.getWorld().getName().equalsIgnoreCase(Main.arena.getName())) {
             if(!Game.isOpen()) Main.joinServer(Server.LOBBY, player);
             Game.setViewer(player);

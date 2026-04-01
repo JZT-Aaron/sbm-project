@@ -17,12 +17,12 @@ public class DamageByEntityListener implements Listener {
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent event) {
         if(!(event.getEntity() instanceof Player player)) return;
-
         if(!(Game.isRunning() && Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) || Game.state().equals(GameState.PAUSED)) {
             event.setCancelled(true);
             return;
         }
 
+        // While Game is not Running no Damange can be Dealt  
         if(!Game.state().equals(GameState.RUNNING_MATCH)) {
             return;
         }
@@ -30,17 +30,21 @@ public class DamageByEntityListener implements Listener {
         Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         Player damager = null;
 
+        // Just hit by Snowball
         if(event.getDamager() instanceof Snowball snowball) if(snowball.getShooter() instanceof Player shooter) damager = shooter;
         else return;
 
-        if(damager == null) throw new IllegalArgumentException("A Game hit without shooter was detected.");
+        if(damager == null) throw new IllegalArgumentException("A Snowball hit without shooter was detected.");
         
+        // No Friendly Fire
         if(TeamManager.getTeamPlayers(team).contains(damager.getUniqueId().toString())) {
             event.setCancelled(true);
             return;
         }
 
+        
         if(Game.isRunning() && (TeamManager.getTeamsPlayer().get(damager.getUniqueId().toString()) != team)) {
+            // Ask if the hit is fatal.
             boolean isKilled = (player.getHealthScale() <= 2);
             if(isKilled) Game.deadMode(player);
             else {

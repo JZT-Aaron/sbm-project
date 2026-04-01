@@ -11,6 +11,7 @@ public class InventoryOpenListener implements Listener {
 
     @EventHandler
     public void onOpen(InventoryOpenEvent event) {
+        // Snowball Droper Inv Lock
         if(event.getInventory().getHolder() instanceof Dropper && Game.getLivingPlayers().containsKey(event.getPlayer().getUniqueId().toString())) {
             event.setCancelled(true);
             return;

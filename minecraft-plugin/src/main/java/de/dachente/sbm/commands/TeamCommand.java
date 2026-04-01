@@ -60,6 +60,7 @@ public class TeamCommand implements CommandExecutor {
             return true;
         }
 
+        // Distribute all Players on the Arena
         if(args[0].equalsIgnoreCase("add-all")) {
             for(Player all : Main.arena.getPlayers()) TeamManager.addPlayerTeam(all.getUniqueId().toString());
             Info.sendInfo("All players were distributed.", "§aDev-Cmd");

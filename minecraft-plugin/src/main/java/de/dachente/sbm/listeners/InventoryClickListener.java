@@ -35,6 +35,8 @@ public class InventoryClickListener implements Listener {
         String id = ItemBuilder.getTagData(item);
         if(id == null) return;
 
+        //Menu for Camera
+
         if(id.contains("use-camera")) {
             String cameraId = id.replace("use-", "");
             for(ArmorStand armorStand : Game.cameraPoints) {

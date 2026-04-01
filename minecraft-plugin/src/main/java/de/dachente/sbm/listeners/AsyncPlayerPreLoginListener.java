@@ -14,6 +14,7 @@ public class AsyncPlayerPreLoginListener  implements Listener {
     @EventHandler
     public void onAsyncJoin(AsyncPlayerPreLoginEvent event) {
         UUID uuid = event.getUniqueId();
+        //Load all Permanente Data before Player is in World
         if(!PlayerStats.containsPlayerSync(uuid)) PlayerStats.createPlayerSync(uuid, event.getName());
         else PlayerStats.loggedInSync(uuid);
         

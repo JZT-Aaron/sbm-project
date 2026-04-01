@@ -42,7 +42,9 @@ public class InteractListener implements Listener {
 
         if(ItemBuilder.isUnmovable(event.getItem())) {
             event.setCancelled(true);
-        }
+        }*/
+
+        //Hotbar Buttons
 
         if(id.equalsIgnoreCase("join-team")) {
             if(!Game.state().equals(GameState.OPEN)) {
