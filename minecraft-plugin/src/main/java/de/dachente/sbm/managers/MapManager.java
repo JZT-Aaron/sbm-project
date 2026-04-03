@@ -48,7 +48,10 @@ public class MapManager {
     public static void loadMap(GameMap map) {
         StructureManager manager = Bukkit.getStructureManager();
         File file = new File(MAPS_PATH, map.getId() + ".nbt");
-        if(!file.exists()) throw new IllegalArgumentException("This Map doesn't have a file");
+        if(!file.exists()) {
+            updateMapsNbtFiles();
+            if(!file.exists()) throw new IllegalArgumentException("This Map doesn't have a file");
+        } 
         try {
             Structure structure = manager.loadStructure(file);
             Location pasteLocation = new Location(Main.arena, 54, -1, -22);

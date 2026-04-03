@@ -49,6 +49,7 @@ public class RedisManager {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T parse(String raw, Type type) {
         if(raw == null || raw.equalsIgnoreCase("null")) return null;
         if(type == String.class) return (T) raw;

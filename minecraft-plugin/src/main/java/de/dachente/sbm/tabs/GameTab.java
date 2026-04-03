@@ -35,6 +35,7 @@ public class GameTab implements TabCompleter {
             tab.add("gate");
             tab.add("dead");
             tab.add("reset");
+            tab.add("end");
 
             tab.add("bonus-snowball");
             tab.add("game-joining");

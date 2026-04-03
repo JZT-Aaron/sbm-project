@@ -9,7 +9,6 @@ import de.dachente.sbm.utils.ItemBuilder;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Server;
 
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -28,27 +27,32 @@ public class InteractListener implements Listener {
     public void onInteractEvent(PlayerInteractEvent event) throws MalformedURLException {
         Player player = event.getPlayer();
         if(event.getItem() == null) return;
-        if(!((player.hasPermission(config.getString("permission.sbm.allow.item-move")) && player.getGameMode().equals(GameMode.CREATIVE)) || (event.getItem().getType().equals(Material.SNOWBALL))
-                && TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) || Game.state().equals(GameState.PAUSED)) {
+        if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && Game.state().equals(GameState.PAUSED)) {
             event.setCancelled(true);
         }
         
         if(event.getItem() == null) return;
         if(!event.getItem().hasItemMeta()) return;
-        if(event.getItem().getItemMeta().getPersistentDataContainer().isEmpty()) return;
+        if(!ItemBuilder.hasPersistedDataContainer(event.getItem())) return;
 
+        if(ItemBuilder.isDisabled(event.getItem())) {
+            event.setCancelled(true);
+            if(event.getItem().getType().equals(Material.ENDER_PEARL)) player.setCooldown(Material.ENDER_PEARL, 0);
+        }
+        
+        if(!ItemBuilder.hasTagData(event.getItem())) return;
 
         String id = ItemBuilder.getTagData(event.getItem());
 
-        if(ItemBuilder.isUnmovable(event.getItem())) {
+        /*if(ItemBuilder.isUnmovable(event.getItem())) {
             event.setCancelled(true);
         }*/
 
         //Hotbar Buttons
-
+        
         if(id.equalsIgnoreCase("join-team")) {
             if(!Game.state().equals(GameState.OPEN)) {
-                Info.sendInfo("Du kannst nicht mehr Teilnehmen!", player);
+                Info.sendLangError("join-end", player);
                 return;
             }
             TeamManager.addPlayerTeam(player.getUniqueId().toString());

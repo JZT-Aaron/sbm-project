@@ -34,6 +34,7 @@ public class SnowballHitListener implements Listener {
 
         Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
 
+        //Bonus Snowball or Normal drop weather friendly or enemy.
         if(event.getHitEntity() != null && (event.getHitEntity() instanceof Player)) {
             Player hitPlayer = (Player) event.getHitEntity();
             Team hitTeam = TeamManager.getTeamsPlayer().get(hitPlayer.getUniqueId().toString());
@@ -50,6 +51,8 @@ public class SnowballHitListener implements Listener {
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 5, 1);
             return;
         }
+
+        //Normal Block hit with Reflextion of Snowball
 
         Location dropLocation = snowball.getLocation();
 
@@ -70,8 +73,14 @@ public class SnowballHitListener implements Listener {
             return false; 
         }).map((enity) -> (Item) enity).toList();
 
-        Vector vector = snowball.getVelocity();
+        Vector vector =  getReflextionVector(blockFace, snowball.getVelocity());
+        
+        for(Item cSnowball : snowballs) {
+            cSnowball.setVelocity(vector);
+        }
+    }
 
+    public static Vector getReflextionVector(BlockFace blockFace, Vector vector) {
         if(blockFace != null) {
             Vector blockFaceVector = blockFace.getDirection();
 
@@ -80,10 +89,7 @@ public class SnowballHitListener implements Listener {
         }
         vector.normalize();
         vector.multiply(0.5);
-        
-        for(Item cSnowball : snowballs) {
-            cSnowball.setVelocity(vector);
-        }
+        return vector;
     }
 
     

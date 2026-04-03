@@ -65,6 +65,7 @@ public class TeamManager {
         setTeamChestPlate(team, player);
         UUID rUuid = UUID.fromString(uuid);
         Info.sendLangInfo("team.team-join", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));
+        Game.addToLivingPlayers(uuid);
     }
 
     public static void removePlayerTeam(String uuid) {
@@ -79,6 +80,7 @@ public class TeamManager {
 
         if(player == null) return;
         Game.setViewer(player);
+        Game.removeFromLivingPlayers(uuid);
         UUID rUuid = UUID.fromString(uuid);
         Info.sendLangInfo("team.team-leave", Bukkit.getPlayer(rUuid), "%team%", getText("team." + team.getId(), rUuid));
     }

@@ -144,6 +144,11 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder setDisabled() {
+        meta.getPersistentDataContainer().set(Main.NO_USE, PersistentDataType.BYTE, (byte) 1);
+        return this;
+    }
+
     public ItemBuilder setMovable() {
         meta.getPersistentDataContainer().remove(Main.NO_MOVE);
         return this;
@@ -195,6 +200,12 @@ public class ItemBuilder {
     public static boolean isUnmovable(ItemStack item) {
         if(item == null || item.getItemMeta() == null) return false;
         Byte tag = item.getItemMeta().getPersistentDataContainer().get(Main.NO_MOVE, PersistentDataType.BYTE);
+        return tag != null && tag == (byte) 1;
+    }
+
+    public static boolean isDisabled(ItemStack item) {
+        if(item == null || item.getItemMeta() == null) return false;
+        Byte tag = item.getItemMeta().getPersistentDataContainer().get(Main.NO_USE, PersistentDataType.BYTE);
         return tag != null && tag == (byte) 1;
     }
 

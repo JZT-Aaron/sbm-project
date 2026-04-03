@@ -31,7 +31,7 @@ public class StatusManger {
     }    
 
     private static void updatePlayerStatus(Status status, Player player) {
-        String playerColor = TeamManager.isInTeam(player) ? TeamManager.getTeam(player).getChatColor() : "§f";
+        String playerColor = TeamManager.isInTeam(player) ? TeamManager.getTeam(player).getChatColor() : (status == Status.WON ? "§6" : "§f");
         player.playerListName(Component.text(" " + status.getSymbol() + " §7| " + playerColor + Main.toPlain(player.displayName())));
     }
 

@@ -61,15 +61,24 @@ public class Game {
         UUID uuid = player.getUniqueId();
 
         ItemStack leaveTeam = new ItemBuilder(Material.RED_BED).setLangNameDescriptionTag("leave-team", uuid).setUnmovable().build();
-        player.getInventory().setItem(8, leaveTeam);
+        player.getInventory().clear();
+        
+        if(Game.state().equals(GameState.OPEN)) player.getInventory().setItem(8, leaveTeam);
+        
         player.getInventory().setItem(7, LanguageManager.getLanguageChangeItem(uuid));
     }
 
     public static void setViewer(Player player) {
-        player.teleport(Main.arena.getSpawnLocation());
         player.getInventory().clear();
-        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) TeamManager.setTeamChestPlate(player);
-        else StatusManger.setPlayerStatus(Status.WATCHING, player);
+        
+        if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
+            Team team = TeamManager.getTeam(player);
+            TeamManager.setTeamChestPlate(player);
+            player.teleport(Main.parseLocation(Main.getPlugin().getConfig().getString("spawn-points.dead." + team.getId()), Main.arena));
+        } else {
+            StatusManger.setPlayerStatus(Status.WATCHING, player);
+            player.teleport(Main.arena.getSpawnLocation());  
+        } 
         player.setHealthScale(20);
         player.setHealth(20);
         player.setFoodLevel(20);
@@ -106,8 +115,11 @@ public class Game {
         setGameStatus(GameState.STARTING_MATCH);
         Info.sendLangImportantInfo("timer.gate-timer-start", "%sec%", "§b5");
         Info.showLangTitle("gate-open-countdown");
-        for(Player all : Bukkit.getOnlinePlayers()) {
-            all.getInventory().clear();
+        for(Entry<String, Team> all : TeamManager.getTeamsPlayer().entrySet()) {
+            Player player = Bukkit.getPlayer(UUID.fromString(all.getKey()));
+            if(player == null) return;
+            player.getInventory().clear();
+            TeamManager.setTeamChestPlate(player);
         }
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int timer = 5;
@@ -205,7 +217,6 @@ public class Game {
         for(Team team : Team.values()) setNewTeamRespawnPoint(team);
         for(Player all : Main.arena.getPlayers()) BossBarManager.addPlayer(all);
         GameRepeat.start();
-        Map<String, Team> livingPlayers = new HashMap<>();
         for(Map.Entry<String, Team> map : TeamManager.getTeamsPlayer().entrySet()) {
             Team team = map.getValue();
             Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
@@ -215,7 +226,6 @@ public class Game {
                 return;
             }
             StatusManger.setPlayerStatus(Status.PLAYING, player);
-            livingPlayers.put(map.getKey(), team);
             player.getInventory().clear();
             TeamManager.setTeamChestPlate(player);
             ItemStack snowball = Game.snowball;
@@ -223,7 +233,6 @@ public class Game {
             player.getInventory().addItem(snowball);
             player.setHealthScale(6);
         }
-        setLivingPlayers(livingPlayers);
 
         Instant gameEndTimestamp = Instant.now().plus(ROUND_LENGHT, ChronoUnit.MINUTES);
         GameStats.set(GameStat.GAME_END_TIMESTAMP, gameEndTimestamp.toEpochMilli());
@@ -273,6 +282,7 @@ public class Game {
             if(map.getValue() == wonTeam) {
                 Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
                 player.teleport(wonTeam.getTeamSpawnLocation());
+                Info.sendLangInfo("team.team-join", player, "%team%", getText("team." + wonTeam.getId(), player.getUniqueId()));
                 loadLobbyInv(player);
                 continue;
             }
@@ -315,9 +325,12 @@ public class Game {
         GateManager.setGateActive(false);
         for(Player all : Main.arena.getPlayers()) {
             if(!TeamManager.getTeamsPlayer().containsKey(all.getUniqueId().toString())) continue;
+            Team team = TeamManager.getTeam(all);
             all.getInventory().clear();
             TeamManager.setTeamChestPlate(all);
             all.setHealthScale(20);
+            all.teleport(team.getTeamSpawnLocation());
+            Info.sendLangInfo("team.team-join", all, "%team%", getText("team." + team.getId(), all.getUniqueId()));
         }
         setLivingPlayers(new HashMap<>());
         setTeamHearts(new HashMap<>());
@@ -335,10 +348,14 @@ public class Game {
         for(Team team : Team.values()) TeamManager.clearTeam(team);
     }
 
-    public static void pause() {
-        Info.sendLangImportantInfo("paused");
+    public static void pause(boolean sendMessage) {
+        if(sendMessage) Info.sendLangImportantInfo("paused");
         beforePause = state();
         setGameStatus(GameState.PAUSED);
+    }
+
+    public static void pause() {
+        pause(true);
     }
   
     public static void resume() {
@@ -347,6 +364,7 @@ public class Game {
     }
     
     public static void winner(Player player) {
+        for(Team team : Team.values()) TeamManager.clearTeam(team);
         resetRound();
         MapManager.loadMap(GameMap.WINNER);
         Info.sendLangImportantInfo("event.player-won", "%player%", "§6" + player.getName());
@@ -357,6 +375,7 @@ public class Game {
             StatusManger.setPlayerStatus(Status.WATCHING, all);
         }
         StatusManger.setPlayerStatus(Status.WON, player);
+        player.getInventory().clear();
         player.teleport(Main.parseLocation(config.getString("spawn-points.winner"), Main.arena));
     }
 
@@ -400,16 +419,21 @@ public class Game {
     public static void setGameServerHotbar(Player player) {
         Inventory inv = player.getInventory();
         UUID uuid = player.getUniqueId();
+        boolean isOpen = state().equals(GameState.OPEN);
+        Material joinTeamMaterial = isOpen ? Material.BOOK : Material.ENCHANTED_BOOK;
         for(int slot = 0; slot < 9; slot++) inv.setItem(slot, new ItemStack(Material.AIR));
-        ItemStack joinTeam = new ItemBuilder(Material.BOOK).setLangNameDescriptionTag("join-team", uuid).setUnmovable().build();
-        ItemStack cameraViews = new ItemBuilder(Material.SPYGLASS).setLangNameDescriptionTag("open-camera-views", uuid).setUnmovable().build();
+        ItemStack joinTeam = new ItemBuilder(joinTeamMaterial).setLangNameDescriptionTag("join-team" + (isOpen ? "" : "-closed") , uuid).setUnmovable().build();
+        ItemStack cameraViews = new ItemBuilder(Material.ENDER_PEARL).setDisabled().setLangNameDescriptionTag("open-camera-views", uuid).setUnmovable().build();
         ItemStack backToLobby = new ItemBuilder(Material.BEACON).setLangNameDescriptionTag("join-lobby", uuid).setUnmovable().build();
+        ItemStack spyglass = new ItemBuilder(Material.SPYGLASS).setUnmovable().build();
+
         
+        player.getInventory().setHeldItemSlot(3);
         inv.setItem(8, backToLobby);
         inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
         inv.setItem(0, joinTeam);
-        inv.setItem(2, cameraViews);
-        player.getInventory().setHeldItemSlot(1);
+        inv.setItem(1, cameraViews);
+        inv.setItem(4, spyglass);
         player.updateInventory();
     }
 
@@ -428,7 +452,7 @@ public class Game {
     public static ItemStack getStartClockItem(Player player) {
         UUID uuid = player.getUniqueId();
 
-        ItemBuilder joinGameServerBuilder = new ItemBuilder(Material.CLOCK).setDisplayName(LanguageManager.getItemName("closed-game-server", uuid).replace("%time%", StartClock.openDateDiffrenceText)).setUnmovable();
+        ItemBuilder joinGameServerBuilder = new ItemBuilder(Material.CLOCK).setDisabled().setDisplayName(LanguageManager.getItemName("closed-game-server", uuid).replace("%time%", StartClock.openDateDiffrenceText)).setUnmovable();
 
         if(Game.isOpen())
             joinGameServerBuilder = joinGameServerBuilder.setMaterial(Material.SNOWBALL)

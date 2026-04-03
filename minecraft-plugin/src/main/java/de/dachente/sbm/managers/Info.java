@@ -30,10 +30,6 @@ public class Info {
         }
     }
 
-    public static Consumer<String> getCmdReplyConsumer(String senderName, Player player) {
-        return msg -> sendInfo(msg, senderName, player);
-    }
-
     public static Consumer<String> getLangReplyConsumer(String prefixid, String color, Player receiver) {
         return id -> sendLangMessage(id, prefixid, color);
     }

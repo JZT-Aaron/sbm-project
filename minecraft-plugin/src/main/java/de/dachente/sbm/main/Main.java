@@ -106,6 +106,7 @@ public final class Main extends JavaPlugin {
 
         NO_MOVE = new NamespacedKey(this, "no-move");
         NO_DROP = new NamespacedKey(this, "no-drop");
+        NO_USE = new NamespacedKey(this, "no-use");
         TAG_KEY = new NamespacedKey(this, "tag-data");
 
         registerCommands();
@@ -150,16 +151,15 @@ public final class Main extends JavaPlugin {
     }
 
     private void loadBackendClient() {
-        Dotenv dotenv = Dotenv.configure().directory("/data/").load();
-        String backendUrl = dotenv.get("BACKEND_URL");
-        String apiKey = dotenv.get("BACKEND_API_KEY");
+        String backendUrl = get("BACKEND_URL");
+        String apiKey = get("BACKEND_API_KEY");
 
         backendClient = new BackendClient(backendUrl, apiKey);
         getLogger().info("BackendClient initialized: " + backendUrl);
 
-        String redisHost = dotenv.get("REDIS_HOST");
-        int redisPort = Integer.parseInt(dotenv.get("REDIS_PORT"));
-        String redisPasswort = dotenv.get("REDIS_PASSWORD");
+        String redisHost = get("REDIS_HOST");
+        int redisPort = Integer.parseInt(get("REDIS_PORT"));
+        String redisPasswort = get("REDIS_PASSWORD");
 
         Jedis jedis = new Jedis(redisHost, redisPort);
         jedis.auth(redisPasswort);
@@ -169,13 +169,21 @@ public final class Main extends JavaPlugin {
 
         redisManager = new RedisManager(redisHost, redisPort, redisPasswort);
 
-        String dbHost = dotenv.get("SQL_HOST");
-        int dbPort = Integer.parseInt(dotenv.get("SQL_PORT"));
-        String user = dotenv.get("SQL_USER");
-        String dbPasswort = dotenv.get("SQL_PASSWORD");
-        String dbDB = dotenv.get("SQL_DB");
+        String dbHost = get("SQL_HOST");
+        int dbPort = Integer.parseInt(get("SQL_PORT"));
+        String user = get("SQL_USER");
+        String dbPasswort = get("SQL_PASSWORD");
+        String dbDB = get("SQL_DB");
 
         dbManager = new DatabaseManager(dbHost, dbPort, dbDB, user, dbPasswort);
+
+        PlayerStats.setupDatebase();
+    }
+
+
+    private String get(String key) {
+        Dotenv dotenv = Dotenv.configure().directory("/data/").ignoreIfMissing().load();
+        return dotenv.get(key) == null ? System.getenv(key) : dotenv.get(key);
     }
 
     public static BackendClient getBackendClient() {

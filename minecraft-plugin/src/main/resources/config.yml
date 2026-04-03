@@ -9,6 +9,9 @@ permission:
         break-blocks: sbm.allow.break-blocks
         item-move: sbm.allow.item-move
         behold-gamemode: sbm.allow.behold-gamemode
+
+field-boundary: "87, 0, 21; 55, 30, -20.5"
+
 gates-pos:
   plates:
     blue-a: "70, 0, 29; 69, 0, 29; 68, 0, 29"

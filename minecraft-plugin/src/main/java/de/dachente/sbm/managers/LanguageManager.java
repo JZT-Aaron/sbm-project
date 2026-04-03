@@ -72,6 +72,9 @@ public class LanguageManager {
     }
 
     public static void addOnlineSnyc(UUID userUuid) {
+        Language lang =  PlayerStats.getLanguageSync(userUuid);
+        playerLanguages.put(userUuid, PlayerStats.getLanguageSync(userUuid));
+        Main.getPlugin().getLogger().info("Added Player to Online Players:" + userUuid + " | " + lang);
         playerLanguages.put(userUuid, PlayerStats.getLanguageSync(userUuid));
     }
 

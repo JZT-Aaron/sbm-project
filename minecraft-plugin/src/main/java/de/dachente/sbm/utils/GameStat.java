@@ -22,7 +22,8 @@ public enum GameStat {
     PLAYER_LANGUAGE("player-language", new TypeToken<Map<String, Language>>(){}.getType(), new HashMap<>()),
     LOADED_MAP("loaded-map", GameMap.class, GameMap.GAME),
     LEFT_TEAM_PLAYERS("left-team-players", new TypeToken<Map<String, Game.HandoverContext>>(){}.getType(), new HashMap<>()),
-    NEXT_RESPAWN_POINT("next-respawn-point", new TypeToken<Map<Team, Integer>>(){}.getType(), new HashMap<>());
+    NEXT_RESPAWN_POINT("next-respawn-point", new TypeToken<Map<Team, Integer>>(){}.getType(), new HashMap<>()),
+    SPECTATOR_PLAYERS("spectator-players", new TypeToken<Map<String, String>>(){}.getType(), new HashMap<>());
     
 
     private final String redisKey;
