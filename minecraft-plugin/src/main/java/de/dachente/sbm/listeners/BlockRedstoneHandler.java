@@ -16,10 +16,5 @@ public class BlockRedstoneHandler implements Listener {
         if(!(block.getType().name().contains("PRESSURE_PLATE") && GateManager.getPresurePlatesPos().contains(block.getLocation()))) return;
         Team team = GateManager.getTeamByPresurePlatePos(block.getLocation());
         if(!GateManager.getGateActive(team)) event.setNewCurrent(0);
-        else {
-            boolean open = event.getNewCurrent() > 0;
-            if(!open && GateManager.arePartnerPlatesStillOn(block.getLocation())) return;
-            GateManager.setBarriers(block.getLocation(), open);
-        }
     }
 }

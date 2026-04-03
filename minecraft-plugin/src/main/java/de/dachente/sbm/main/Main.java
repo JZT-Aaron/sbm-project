@@ -250,37 +250,43 @@ public final class Main extends JavaPlugin {
     }
 
     private void registerTeamGates() {
-        List<Location> bluePressurePlates = new ArrayList<>();
-        List<Location> redPressurePlates = new ArrayList<>();
-        Map<Location, List<Location>> barriersPerGate = new HashMap<>();
+        Map<Location, Gate> pressurePlates = new HashMap<>();
+        Map<Gate, List<Location>> barriersPerGate = new HashMap<>();
+        Map<Gate, List<Location>> barrierBox = new HashMap<>();
 
         List<Location> blueSigns = new ArrayList<>();
         List<Location> redSigns = new ArrayList<>();
         
         ConfigurationSection plateSection = getConfig().getConfigurationSection("gates-pos.plates");
         ConfigurationSection barrierSection = getConfig().getConfigurationSection("gates-pos.barriers");
+        ConfigurationSection barrierBoxSection = getConfig().getConfigurationSection("gates-pos.barriers-box");
         ConfigurationSection signSection = getConfig().getConfigurationSection("gates-pos.signs");
         
         for(String key : plateSection.getKeys(false)) {
+            Gate gate = Gate.getGateByString(key);
             List<Location> plateLocations = parseList(plateSection.getString(key));
             List<Location> barrierLocations = parseList(barrierSection.getString(key));
+            List<Location> barrierBoxLocations = parseList(barrierBoxSection.getString(key));
 
             blueSigns.addAll(parseList(signSection.getString(key)));
             redSigns.addAll(blueSigns.stream().map(this::getMirrorLocation).toList());
 
             List<Location> mirrorBarrierLocations = barrierLocations.stream().map(this::getMirrorLocation).toList();
+            List<Location> mirrorBarrierBoxLocations = barrierBoxLocations.stream().map(this::getMirrorLocation).toList();
 
             for(Location plateLocation : plateLocations) {
-                Location redPlate = getMirrorLocation(plateLocation);
-                barriersPerGate.put(redPlate, mirrorBarrierLocations);
-                barriersPerGate.put(plateLocation, barrierLocations);
-                bluePressurePlates.add(plateLocation);
-                redPressurePlates.add(redPlate);
+                pressurePlates.put(plateLocation, gate);
+                pressurePlates.put(getMirrorLocation(plateLocation), Gate.getOppositColor(gate));
+            }
+            barriersPerGate.put(gate, barrierLocations);
+            barriersPerGate.put(Gate.getOppositColor(gate), mirrorBarrierLocations);
+            barrierBox.put(gate, barrierBoxLocations);
+            barrierBox.put(Gate.getOppositColor(gate), mirrorBarrierBoxLocations);
             }
 
-        }
 
-        GateManager.setPressurePlates(bluePressurePlates, redPressurePlates);
+        GateManager.setPressurePlates(pressurePlates);
+        GateManager.setBarrierBox(barrierBox);
         GateManager.setBarrierPerGate(barriersPerGate);
         GateManager.setSigns(blueSigns, redSigns);
     }

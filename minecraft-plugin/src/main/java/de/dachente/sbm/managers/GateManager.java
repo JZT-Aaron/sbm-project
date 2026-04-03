@@ -5,22 +5,26 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.sign.Side;
+import org.bukkit.util.BoundingBox;
 
+import de.dachente.sbm.utils.Game;
+import de.dachente.sbm.utils.enums.Gate;
 import de.dachente.sbm.utils.enums.SignFrame;
 import de.dachente.sbm.utils.enums.Team;
 
 public class GateManager {
 
     public static EnumMap<Team, Boolean> teamGateActive = new EnumMap<>(Team.class);
-    private static Map<Location, List<Location>> barrierPerGate = new HashMap<>();
+    private static Map<Gate, List<Location>> barrierPerGate = new HashMap<>();
+    private static Map<Gate, List<Location>> barrierBox = new HashMap<>();
 
     public static List<Location> getPresurePlatesPos() {
        List<Location> pressurePlates = new ArrayList<>();
@@ -28,10 +32,15 @@ public class GateManager {
        return pressurePlates; 
     }
 
-    public static List<Location> getPresurePlatesPos(Team team) { 
-        if(team == Team.BLUE) return bluePressurePlatesPos;
-        if(team == Team.RED) return redPressurePlatesPos;
-        return null;
+    public static List<Location> getPresurePlatesPos(Team team) {
+        List<Location> plates = new ArrayList<>();
+        List<Gate> gates = Gate.getGateByTeam(team);
+        for(Entry<Location, Gate> entry : pressurePlates.entrySet()) if(gates.contains(entry.getValue())) plates.add(entry.getKey());
+        return plates;
+    }
+
+    public static Gate getGate(Location plate) {
+        return pressurePlates.get(plate);
     }
 
     public static Team getTeamByPresurePlatePos(Location pos) {
@@ -44,12 +53,10 @@ public class GateManager {
         return team;
     }
 
-    private static List<Location> bluePressurePlatesPos = new ArrayList<>();
-    private static List<Location> redPressurePlatesPos = new ArrayList<>();
+    private static Map<Location, Gate> pressurePlates = new HashMap<>();
 
-    public static void setPressurePlates(List<Location> blue, List<Location> red) {
-        bluePressurePlatesPos = blue;
-        redPressurePlatesPos = red;
+    public static void setPressurePlates(Map<Location, Gate> pressurePlates) {
+        GateManager.pressurePlates = pressurePlates;
     }
 
     public static void setGateActive(boolean active) {
@@ -65,39 +72,45 @@ public class GateManager {
         return teamGateActive.getOrDefault(team, false);
     }
 
-    public static void setBarriers(Location plate, boolean open) {
-        List<Block> barriers = getBarriersPerGate(plate).stream().map(Location::getBlock).toList();
+    public static void setBarriers(Gate gate, boolean open) {
+        List<Location> barriers = getBarriersPerGate(gate);
         Material material = open ? Material.AIR : Material.BARRIER;
-        for(Block barrier : barriers) barrier.setType(material);
+        Material replace = open ? Material.BARRIER : Material.AIR;
+        Game.replaceBocks(barriers.get(0), barriers.get(1), replace, material);
     }
 
-    public static List<Location> getPartnerPlates(Location plate) {
+    public static List<Location> getPartnerPlates(Gate gate) {
         List<Location> plates = new ArrayList<>();
-        List<Location> barriers = getBarriersPerGate(plate);
-        for(Map.Entry<Location, List<Location>> entry : barrierPerGate.entrySet()) {
-            if(!entry.getValue().equals(barriers) || entry.getKey().equals(plate)) continue;
-            plates.add(entry.getKey());
-        }
+        for(Entry<Location, Gate> entry : pressurePlates.entrySet()) if(entry.getValue().equals(gate)) plates.add(entry.getKey()); 
         return plates;
     }
 
-    public static boolean arePartnerPlatesStillOn(Location plate) {
-        boolean bool = false;
-        for(Location currentPlate : getPartnerPlates(plate)) {
-            if(!(currentPlate.getBlock().getBlockData() instanceof Powerable plateData)) continue;
-            if(!plateData.isPowered()) continue;
-            
-            bool = true;
-            break;
-        }
-        return bool;
+    public static boolean arePartnerPlatesStillOn(Gate gate) {
+        for(Location currentPlate : getPartnerPlates(gate)) 
+            if((currentPlate.getBlock().getBlockData() instanceof Powerable plateData) && plateData.isPowered()) return true;
+        return false;
     }
 
-    public static List<Location> getBarriersPerGate(Location plate) {
-        return barrierPerGate.get(plate);
+    public static Gate getGateForBarrierBox(Location loc, Team team) {
+        for(Gate gate : Gate.getGateByTeam(team)) if(containsBarrierBoxLoc(gate, loc)) return gate;            
+        return null;
     }
 
-    public static void setBarrierPerGate(Map<Location, List<Location>> barrierPerGate) {
+    public static boolean containsBarrierBoxLoc(Gate gate, Location loc) {
+        List<Location> barrierBoxLocations = barrierBox.get(gate);
+        BoundingBox zone = BoundingBox.of(barrierBoxLocations.get(0).getBlock(), barrierBoxLocations.get(1).getBlock());
+        return zone.contains(loc.getBlock().getLocation().toVector());
+    }
+
+    public static void setBarrierBox(Map<Gate, List<Location>> barrierBox) {
+        GateManager.barrierBox = barrierBox;
+    }
+
+    public static List<Location> getBarriersPerGate(Gate gate) {
+        return barrierPerGate.get(gate);
+    }
+
+    public static void setBarrierPerGate(Map<Gate, List<Location>> barrierPerGate) {
         GateManager.barrierPerGate = barrierPerGate;
     }
 
