@@ -13,7 +13,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -39,8 +38,9 @@ import de.dachente.sbm.listeners.ItemDropListener;
 import de.dachente.sbm.listeners.JoinListener;
 import de.dachente.sbm.listeners.MoveListener;
 import de.dachente.sbm.listeners.MutliLangSignManager;
-import de.dachente.sbm.listeners.PlayerToggleSnakeListener;
+import de.dachente.sbm.listeners.SpectatorManager;
 import de.dachente.sbm.listeners.QuitListener;
+import de.dachente.sbm.listeners.SnowballFlyListener;
 import de.dachente.sbm.listeners.SnowballHitListener;
 import de.dachente.sbm.managers.BossBarManager;
 import de.dachente.sbm.managers.GateManager;
@@ -54,12 +54,14 @@ import de.dachente.sbm.tabs.VoidTab;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.GameRepeat;
 import de.dachente.sbm.utils.GameStats;
+import de.dachente.sbm.utils.PlayerStats;
 import de.dachente.sbm.utils.Repeat;
 import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.coms.BackendClient;
 import de.dachente.sbm.utils.coms.DatabaseManager;
 import de.dachente.sbm.utils.coms.RedisEventPublisher;
 import de.dachente.sbm.utils.coms.RedisManager;
+import de.dachente.sbm.utils.enums.Gate;
 import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Server;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -74,6 +76,7 @@ public final class Main extends JavaPlugin {
     private static Main plugin;
     public static NamespacedKey NO_MOVE;
     public static NamespacedKey NO_DROP;
+    public static NamespacedKey NO_USE;
     public static NamespacedKey TAG_KEY;
 
     private static BackendClient backendClient;
@@ -140,10 +143,6 @@ public final class Main extends JavaPlugin {
         GameRepeat.stop();
 
         if(dbManager != null) dbManager.close();
-
-        for(ArmorStand armorStand : Game.cameraPoints) {
-            armorStand.remove();
-        }
 
         BossBarManager.removeAll();
 
@@ -238,11 +237,12 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new InventoryOpenListener(), this);
         pluginManager.registerEvents(new BellRingListener(), this);
 
-        pluginManager.registerEvents(new PlayerToggleSnakeListener(), this);
+        pluginManager.registerEvents(new SpectatorManager(), this);
 
         pluginManager.registerEvents(new DamageByEntityListener(), this);
         pluginManager.registerEvents(new DamageListener(), this);
         pluginManager.registerEvents(new SnowballHitListener(), this);
+        pluginManager.registerEvents(new SnowballFlyListener(), this);
 
         pluginManager.registerEvents(new JoinListener(), this);
         pluginManager.registerEvents(new AsyncPlayerPreLoginListener(), this);
@@ -282,8 +282,8 @@ public final class Main extends JavaPlugin {
             barriersPerGate.put(Gate.getOppositColor(gate), mirrorBarrierLocations);
             barrierBox.put(gate, barrierBoxLocations);
             barrierBox.put(Gate.getOppositColor(gate), mirrorBarrierBoxLocations);
-            }
-
+        }
+        
 
         GateManager.setPressurePlates(pressurePlates);
         GateManager.setBarrierBox(barrierBox);
@@ -337,24 +337,10 @@ public final class Main extends JavaPlugin {
     }
 
     private void registerCameras() {
-        ArmorStand cameraUp = (ArmorStand) arena.spawnEntity(new Location(arena, 0, 22, 0, 180, 90), EntityType.ARMOR_STAND);
-        cameraUp.customName(Component.text("camera-up"));
-        ArmorStand cameraRedSide = (ArmorStand) arena.spawnEntity(new Location(arena, -10, 9, -15,-50,50), EntityType.ARMOR_STAND);
-        cameraRedSide.customName(Component.text("camera-red-side"));
-        ArmorStand cameraBlueSide = (ArmorStand) arena.spawnEntity(new Location(arena, 10, 9, 15, 150, 50), EntityType.ARMOR_STAND);
-        cameraBlueSide.customName(Component.text("camera-blue-side"));
-
-        Game.cameraPoints.add(cameraUp);
-        Game.cameraPoints.add(cameraBlueSide);
-        Game.cameraPoints.add(cameraRedSide);
-
-        for(ArmorStand camera : Game.cameraPoints) {
-            camera.setMarker(true);
-            camera.setInvulnerable(true);
-            camera.setVisible(false);
-            camera.setBasePlate(false);
-            camera.setGravity(false);
-        }
+        ConfigurationSection cameraPos = Main.getPlugin().getConfig().getConfigurationSection("camera-pos");
+        Game.cameraPoints.put("camera-up", parseLocation(cameraPos.getString("top"), arena));
+        Game.cameraPoints.put("camera-red-side", parseLocation(cameraPos.getString("red"), arena));
+        Game.cameraPoints.put("camera-blue-side", parseLocation(cameraPos.getString("blue"), arena));
     }
 
     public static Main getPlugin() {
@@ -370,17 +356,21 @@ public final class Main extends JavaPlugin {
     }
 
     public static void joinServer(Server server, Player player, boolean keepPosition) {
-        Game.setServerHotbar(server, player);
         StatusManger.setPlayerStatus(server.getStatus(), player);
-        if(!keepPosition) player.teleport(server.getWorld().getSpawnLocation());
+        if(SpectatorManager.getSpectatorPlayers().containsKey(player.getUniqueId().toString())) {
+            SpectatorManager.removeSpectatorPlayers(player);
+        }
         if(server == Server.EVENT_SERVER) {
+            Game.setViewer(player);
             MutliLangSignManager.customSigns.remove(player.getUniqueId());
             if(Game.isRunning()) {
                 if(!BossBarManager.containsPlayer(player)) BossBarManager.addPlayer(player);  
             } 
         } else {
-            if(Server.LOBBY == server) { Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> 
-                                        StartClock.updateSigns(player, true), 10L);
+            if(!keepPosition) player.teleport(server.getWorld().getSpawnLocation());
+            Game.setServerHotbar(server, player);
+            if(Server.LOBBY == server) { 
+                Bukkit.getScheduler().runTaskLater(Main.getPlugin(), () -> StartClock.updateSigns(player, true), 10L);
                 resendLobbySigns.add(player);
             }
             BossBarManager.removePlayer(player);

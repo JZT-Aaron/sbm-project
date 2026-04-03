@@ -156,9 +156,13 @@ items:
   join-team:
     name: "Participate"
     description: "Click to participate in the competition."
+  join-team-closed:
+    name: "§c§lEntry Closed"
+    description: "Joining the competition has already ended or has not yet started."
+    no-click: true
   open-camera-views: 
-    name: "Camera Views"
-    description: "Click to open the selection of camera views."
+    name: "Overlooks"
+    description: "Click to open the selection of Overlooks."
   join-lobby: 
     name: "Lobby"
     description: "Click to return to the lobby."
@@ -177,14 +181,14 @@ items:
     description: "The opening time has not been set yet."
     no-click: true 
   use-camera-up:
-    name: "Top Camera"
+    name: "Overlook Top"
     description: "Look down at the field from above."
   use-camera-red-side:
-    name: "Red Side Camera"
-    description: "Look at the red side of the field."
+    name: "Overlook Side Camera"
+    description: "Look at the field from the Red Side."
   use-camera-blue-side:
-    name: "Blue Side Camera"
-    description: "Look at the blue side of the field."
+    name: "Overlook Blue Side"
+    description: "Look at the field from the Blue Side."
   open-change-language:
     name: "Change Language"
     description: "Click to select your language."
@@ -193,4 +197,4 @@ menu:
   change-lang:
     title: "Select your language"
   camera-view-menu: 
-    title: "Camera Views"
+    title: "Overlooks"

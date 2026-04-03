@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -14,6 +15,26 @@ import de.dachente.sbm.utils.enums.Language;
 
 
 public class PlayerStats {
+    public static void setupDatebase() {
+        String sql = "CREATE TABLE IF NOT EXISTS players (" +
+                 "uuid UUID PRIMARY KEY, " +
+                 "playername VARCHAR(16) NOT NULL, " +
+                 "language VARCHAR(10), " +
+                 "last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
+                 ");";
+
+        try (Connection conn = Main.getDbManager().getConnection();
+            Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+                stmt.close();
+                
+            } catch (SQLException e) {
+                Main.getPlugin().getLogger().warning("Error at Creating Table: " + e.getMessage());
+            }
+    }
+
+
     public static void createPlayerSync(UUID uuid, String name) {
         String defaultLang = Language.EN.toString();
 
@@ -28,6 +49,7 @@ public class PlayerStats {
 
             stmt.executeUpdate();
             stmt.close();
+            Main.getPlugin().getLogger().info("PlayerCreated in DB: " + uuid + " | " + name + " | " + defaultLang);
         } catch (SQLException e) {
             e.printStackTrace();
         }

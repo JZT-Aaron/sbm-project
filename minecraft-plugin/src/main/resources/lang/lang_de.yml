@@ -156,9 +156,13 @@ items:
   join-team:
     name: "Teilnehmen"
     description: "Klicke, um am Wettkampf teilzunehmen."
+  join-team-closed:
+    name: "§c§lBeitritt BEENDET"
+    description: "Die Anmeldung zum Wettkampf ist bereits beendet oder wurde noch nicht freigeschaltet."
+    no-click: true
   open-camera-views: 
-    name: "Kamera-Aussichten"
-    description: "Klicke, um die Auswahl der verschiedenen Kamera-Aussichten zu öffnen."
+    name: "Aussichtspunkte"
+    description: "Klicke, um die Auswahl der verschiedenen Hochsitze zu öffnen."
   join-lobby: 
     name: "Lobby"
     description: "Klicke, um zurück in die Lobby zu gelangen."
@@ -177,14 +181,14 @@ items:
     description: "Die Öffnung ist noch nicht festgelegt."
     no-click: true 
   use-camera-up:
-    name: "Kamera oben"
+    name: "Aussichtspunkt oben"
     description: "Blicke von oben auf das Spielfeld."
   use-camera-red-side:
-    name: "Kamera Seite-Rot"
-    description: "Blicke auf die rote Seite des Spielfelds."
+    name: "Aussichtspunkt Rote Seite"
+    description: "Blicke von der roten Seite auf das Spielfelds."
   use-camera-blue-side:
-    name: "Kamera Seite-Blau"
-    description: "Blicke auf die blaue Seite des Spielfelds."
+    name: "Aussichtspunkt Blaue Seite"
+    description: "Blicke von der blaue Seite auf das Spielfelds."
   open-change-language:
     name: "Sprache ändern"
     description: "Klicke, um deine Sprache auszuwählen"
@@ -193,5 +197,5 @@ menu:
   change-lang:
     title: "Wähle deine Sprache aus"
   camera-view-menu: 
-    title: "Kamera-Aussichten"
+    title: "Aussichtspunkte"
   

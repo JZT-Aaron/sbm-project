@@ -21,7 +21,6 @@ import org.bukkit.block.Dropper;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -35,6 +34,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import static de.dachente.sbm.managers.LanguageManager.getText;
+
 public class Game {
 
     static FileConfiguration config = Main.getPlugin().getConfig();
@@ -43,7 +44,7 @@ public class Game {
 
     public static boolean isSnowing = true;
     
-    public static List<ArmorStand> cameraPoints = new ArrayList<>();
+    public static Map<String, Location> cameraPoints = new HashMap<>();
 
     private static GameState beforePause;
 
@@ -427,7 +428,7 @@ public class Game {
         ItemStack backToLobby = new ItemBuilder(Material.BEACON).setLangNameDescriptionTag("join-lobby", uuid).setUnmovable().build();
         ItemStack spyglass = new ItemBuilder(Material.SPYGLASS).setUnmovable().build();
 
-        
+
         player.getInventory().setHeldItemSlot(3);
         inv.setItem(8, backToLobby);
         inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
@@ -470,6 +471,7 @@ public class Game {
 
     public static void deadMode(Player player) {
         StatusManger.setPlayerStatus(Status.DEAD, player);
+        dropInvSnowballs(player);
 
         Team team = TeamManager.getTeamsPlayer().get(player.getUniqueId().toString());
         removeFromLivingPlayers(player.getUniqueId().toString());
@@ -477,13 +479,13 @@ public class Game {
         updateTeamHearts();
 
         setViewer(player);
-        player.teleport(Main.parseLocation(Main.getPlugin().getConfig().getString("spawn-points.dead." + team.getId()), Main.arena));
+        
         
         if(Game.getLivingPlayers(team).size() <= 0) endRound();
     }
 
     public static void openCameraViews(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 9, Component.text("§7Kamera-Aussichten"));
+        Inventory inv = Bukkit.createInventory(null, 9, Component.text("§c§l" + getText("menu.camera-view-menu.title", player.getUniqueId())));
         
         UUID uuid = player.getUniqueId();
 
@@ -559,7 +561,11 @@ public class Game {
     }
 
     public static void setGameStatus(GameState gameStat) {
+        GameState beforeGameSate = state();
         GameStats.set(GameStat.STATE, gameStat);
+        if(beforeGameSate.equals(GameState.OPEN) || gameStat.equals(GameState.OPEN)) for(Player spectators : Main.arena.getPlayers())
+            if(!getLivingPlayers().containsKey(spectators.getUniqueId().toString())) setGameServerHotbar(spectators);
+            else loadLobbyInv(spectators);
     }
 
     public static GameState state() {
@@ -654,9 +660,9 @@ public class Game {
             hearts.put(livingUuid, (int) player.getHealthScale());
         }
 
-        if(hearts.isEmpty()) return null;
+        if(hearts == null || hearts.isEmpty()) return null;
 
-        Integer minHearts = hearts.values().stream().min(Integer::compare).orElse(null);
+        Integer minHearts = hearts.values().stream().min(Comparator.naturalOrder()).orElse(null);
         if(minHearts == null) throw new IllegalArgumentException("No hearts found!");
 
         List<String> lowPlayers = hearts.entrySet().stream()
@@ -715,6 +721,7 @@ public class Game {
         lamp.setBlockData(lightable);
     }
 
+    @SuppressWarnings("unchecked")
     public static Integer getNextTeamRespawnPointId(Team team) {
         return ((Map<Team, Integer>) GameStats.get(GameStat.NEXT_RESPAWN_POINT)).get(team);
     }
@@ -732,6 +739,15 @@ public class Game {
         player.teleport(loc);
         Main.arena.spawnParticle(Particle.CLOUD, player.getLocation(), 150, 0, 1, 0, 1);
         setNewTeamRespawnPoint(team);
+    }
+
+    public static void dropInvSnowballs(Player player) {
+        if(player.getInventory().getContents().length > 0)
+            for(ItemStack item : player.getInventory().getContents()) {
+                if(item == null || !item.getType().equals(Material.SNOWBALL)) continue;
+                player.getInventory().remove(item);
+                Main.arena.dropItemNaturally(player.getLocation(), item);
+            }
     }
 
     /*public static String decoeSekToMinSek(int sek) {

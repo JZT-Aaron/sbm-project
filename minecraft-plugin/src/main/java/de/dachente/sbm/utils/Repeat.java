@@ -1,23 +1,58 @@
 package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
 public class Repeat {
 
     public static int taskID;
 
+    public static List<UUID> movingPlayers = new ArrayList<>();
+
     public static void start() {
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
+            int run = 0;
+
             @Override
             public void run() {
                 if(Game.isSnowing) {
-                    for(Player all : Bukkit.getOnlinePlayers()) all.spawnParticle(Particle.FIREWORK, all.getLocation(), 500, 7, 7, 7, 0.01);
+                    run++;
+                    if(run == 4) run = 0;
+                    for(Player all : Bukkit.getOnlinePlayers()) {
+                        if(run == 3 || (run != 0 && !movingPlayers.contains(all.getUniqueId()))) continue;
+
+                        if(all.getLocation().getBlock().getLightFromSky() < 3) continue;
+                        Location eyeLocation = all.getEyeLocation();
+                        Vector direction = eyeLocation.getDirection();
+                        direction.setY(0);
+                        if(direction.lengthSquared() > 0) direction.normalize();
+                        
+                        Location focusPoint = eyeLocation.clone().add(direction.multiply(5)).add(0, 3, 0);
+
+                        if(focusPoint.getBlock().getLightFromSky() < 10) continue;
+
+                        for (int i = 0; i < 3; i++) {
+                            double xOffset = (Math.random() * 20) - 10;
+                            double yOffset = (Math.random() * 10);
+                            double zOffset = (Math.random() * 20) - 10;
+                            
+                            Location particleLoc = focusPoint.clone().add(xOffset, yOffset, zOffset);
+                            if(particleLoc.getBlock().getLightFromSky() < 15) continue;
+                            all.spawnParticle(Particle.FIREWORK, particleLoc, 50, 2, 5, 2, 0.01);
+                        }
+                    }
                 }
             }
-        }, 0, 15);
+        }, 0, 1);
     }
 
     public static void stop() {
