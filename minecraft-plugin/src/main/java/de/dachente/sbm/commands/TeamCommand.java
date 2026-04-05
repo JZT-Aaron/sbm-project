@@ -21,9 +21,10 @@ public class TeamCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(!(sender instanceof Player player)) return true;
+        Player player = null;
+        if(sender instanceof Player playerNew) player = playerNew;
 
-        if(!player.hasPermission(config.getString("permission.sbm.command.team"))) {
+        if(player != null && !player.hasPermission(config.getString("permission.sbm.command.team"))) {
             Info.sendLangError("no-permission", player);
             return true;
         }
@@ -34,7 +35,8 @@ public class TeamCommand implements CommandExecutor {
         if(isPlayerNeeded && args.length >= 2) {
             target = Bukkit.getPlayer(args[1]);
             if(target == null) {
-                Info.sendLangError("player-not-found", player, "%player%", args[1]);
+                if(player != null) Info.sendLangError("player-not-found", player, "%player%", args[1]);
+                else sender.sendMessage("§cThis Player does not exist.");
                 return true;
             }
         }
@@ -45,7 +47,8 @@ public class TeamCommand implements CommandExecutor {
             if(target == null) throw new IllegalArgumentException("Target can't be null");
 
             if(!isAdd && !TeamManager.getTeamsPlayer().containsKey(target.getUniqueId().toString())) {
-                Info.sendLangError("team.player-not-found", target, "%player%", target.getName());
+                if(player != null) Info.sendLangError("team.player-not-found", player, "%player%", target.getName());
+                else sender.sendMessage("§cThis Player is not in a Team!");
                 return true;
             } else if(args.length >= 3) team = Team.getTeamById(args[2]);
             
@@ -55,15 +58,18 @@ public class TeamCommand implements CommandExecutor {
             String teamId = "team-random";
             if(team != null) teamId = team.getId();
 
-            Info.sendLangInfo("team.team-manuell-change", target, "%player%", target.getName(), "%team%", getText("team." + teamId, player.getUniqueId()), 
+            if(player != null) Info.sendLangInfo("team.team-manuell-change", target, "%player%", target.getName(), "%team%", getText("team." + teamId, player.getUniqueId()), 
             "%state%", getText("state." + (isAdd ? "add" : "remove"), player.getUniqueId()));
+            else sender.sendMessage("§aPlayer was removed/added successfully.");
             return true;
         }
+
+        if(player == null) return true;
 
         // Distribute all Players on the Arena
         if(args[0].equalsIgnoreCase("add-all")) {
             for(Player all : Main.arena.getPlayers()) TeamManager.addPlayerTeam(all.getUniqueId().toString());
-            Info.sendInfo("All players were distributed.", "§aDev-Cmd");
+            Info.sendInfo("All players were distributed.", "§aDev-Cmd", player);
             return true;
         }
 
@@ -80,7 +86,7 @@ public class TeamCommand implements CommandExecutor {
             for(String teamPlayer : TeamManager.getTeamPlayers(team)) {
                 TeamManager.removePlayerTeam(teamPlayer);
             }
-            Info.sendInfo("Team was cleared.", "§aDev-Cmd");
+            Info.sendInfo("Team was cleared.", "§aDev-Cmd", player);
             return true;
         }
 
