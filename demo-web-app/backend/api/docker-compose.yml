@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  tooljet:
+    container_name: tooljet-app
+    image: tooljet/tooljet:ee-lts-latest
+    platform: linux/amd64
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - SERVE_CLIENT=true
+      - PORT=80
+      - TOOLJET_HOST=https://<YOUR_DOMAIN>/
+      - PG_HOST=postgres_db
+      - PG_PORT=5432
+      - PG_USER=server
+      - PG_PASS=<DB_PASSWORD>
+      - PG_DB=tooljet
+      - TOOLJET_DB_HOST=postgres_db
+      - TOOLJET_DB_USER=server
+      - TOOLJET_DB_PASS=<DB_PASSWORD>
+      - TOOLJET_DB=tooljet_data
+      - SECRET_KEY_BASE=<SECURE_SECRET_KEY>
+      - LOCKBOX_MASTER_KEY=<SECURE_MASTER_KEY>
+    networks:
+      - internal
+      - proxy-net
+    command: npm run start:prod
+
+  api:
+    image: python:3.12-slim
+    container_name: mc-manager-api
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - /opt/mc-manager/api:/app
+      - /opt/mc-manager/templates:/templates
+      - /opt/mc-manager/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:1320:1320"
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c "apt-get update && apt-get install -y curl && 
+             curl -fsSL [https://deb.nodesource.com/setup_20.x](https://deb.nodesource.com/setup_20.x) | bash - &&
+             apt-get install -y nodejs &&
+             npm install mineflayer@latest mineflayer-pathfinder@latest minecraft-data@latest prismarine-chat@latest &&
+             pip install --no-cache-dir -r requirements.txt &&
+             uvicorn main:app --host 0.0.0.0 --port 1320 --reload"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+  proxy-net:
+    external: true
