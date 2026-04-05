@@ -17,7 +17,7 @@ It is specifically designed for **hosted competitions**, meaning it’s built to
 ### 📋 Prerequisites
 
 * **Docker** and **Docker Compose** must be installed on your system.
-* The **"Essential" folder** containing the worlds and plugins must be ready.
+* The **"Essential" folder** containing the worlds and plugins must be ready. (See Releases)
 
 ### Phase 1: Environment Setup (Docker)
 1.  **Modify Configuration:** Open the `docker-compose.yml` file in the root directory.
