@@ -1,3 +1,9 @@
+# ===============================================================
+#  PERMISSIONS
+#  Define who can run specific commands or perform certain 
+#  actions within the game.
+# ===============================================================
+
 permission:
     sbm:
       command:
@@ -7,59 +13,94 @@ permission:
         maps: sbm.command.maps
       allow:
         break-blocks: sbm.allow.break-blocks
-        item-move: sbm.allow.item-move
-        behold-gamemode: sbm.allow.behold-gamemode
+        interact-blocks: sbm.allow.interact-blocks
+        # Allows moving items that are normally locked (e.g., static items in menu hotbars)
+        item-move: sbm.allow.item-move 
+        # Players with this permission keep their current gamemode; others are forced into Adventure mode.
+        behold-gamemode: sbm.allow.behold-gamemode 
 
-field-boundary: "87, 0, 21; 55, 30, -20.5"
+# ===============================================================
+#  COORDINATES & MECHANICS
+#  Configuration for the game field, boundaries, and interactive elements.
+# ===============================================================
 
-gates-pos:
-  plates:
+# Boundary box: Snowballs will be bounced back if they fly outside of these coordinates.
+field-boundary: "87, 0, 21; 55, 30, -20.5" 
+
+# Interaction Whitelist: Only these specific block coordinates can be right-clicked/interacted with.
+block-click-whitelist: "-2,0, 42;-2,1,42;-3,0, 42;-3,1,42;-6,1,21;-6,2,21;-6,1,20;-6,2,20;-9,2,21;-9,1,21;-13,1,22;-13,2,22;-15,1,25;-15,2,25" 
+
+# Gate Positions:
+# Note: Red team coordinates are automatically calculated by inverting the Z-axis.
+gates-pos: 
+  # Pressure plates in front of the gates. These are disabled when gates are locked.
+  plates: 
     blue-a: "70, 0, 29; 69, 0, 29; 68, 0, 29"
     blue-b: "72, 0, 29; 73, 0, 29; 74, 0, 29"
-  barriers:
+  # These barrier blocks are removed when a player enters the corresponding 'barriers-box'.
+  barriers: 
     blue-a: "65, 0, 22; 68, 3, 22"
     blue-b: "77, 0, 22; 73, 3, 22"
   barriers-box:
     blue-a: "65, 0, 24; 71, 4, 22.5"
     blue-b: "77, 0, 24; 71, 4, 22.5"
-  signs:
+  # Wall signs used to display whether a gate is currently Locked or Unlocked.
+  signs: 
     blue-a: "68, 3, 28; 69, 3, 28; 70, 3, 28"
     blue-b: "72, 3, 28; 73, 3, 28; 74, 3, 28"
+
+# Signs throughout the Lobby that indicate if the server is currently open for play.
 server-open-signs: "43, -5, 4; 43, -5, 6; -4, 1, 49; -45, 0, 8; -5, 1, -33; -13, 0, 6; -13, 0, 2"
 
+# Spectator/Overlook positions for viewing the Gamefield.
 camera-pos:
   red: "42.5, 20, -33.5, -40, 30"
   top: "71.5, 20, 0.5, 90, 90"
   blue: "100.5, 20, 34.5, 135, 30"
 
-spawn-points:
-  respawn-points:
-    team-blue: "85, -1, 17, -180, 0; 57, -1, 17, -180, 0; 71, -1, 7, -180, 0"
-    team-red: "85, -1, -17; 57, -1, -17; 71, -1, -7"
-    barrier: "55, 2, 0; 87, 0, 0"
-  snowball:
-    team-blue: "71, 0, 4; 71, 1, 4"
-    team-red: "71, 0, -4; 71, 1, -4"
-  winner: "71.5, 11, 0.5"
-  forceload-chunks: "3,-2;3,-1;3,0;3,1;4,-2;4,-1;4,0;4,1;5,-2;5,-1;5,0;5,1"
-  dead:
-    team-blue: "71.5, 8, 47.5, -180, 0"
-    team-red: "71.5, 8, -46.5"
+# Invisible barriers separating the two halves of the field. These are removed at the start of a Round.
+side-barriers: "55, 5, 0; 87, 0, 0"
 
-rematch-spawn:
-  team-blue: "71.5, 2, 3.5"
-  team-red: "71.5, 2, -2.5"
-  barrier-box: "97, 2, 8; 63, 4, -8"
+# List of chunks that remain permanently loaded while the game is active.
+forceload-chunks: "3,-2;3,-1;3,0;3,1;4,-2;4,-1;4,0;4,1;5,-2;5,-1;5,0;5,1"
 
+# Geometrical center of the arena. Used for calculating snowball physics/direction.
+arena-center: "71.5, 0, 0" 
 
-arena-center: "71.5, 0, 0"
+# Target Objectives (Doom Bell):
+target: 
+  pos: "71, 1, 20; 71, 1, -20"     # Physical location of the target bells.
+  circle: "71, 0, 18; 71, 0, -18"  # Circular protection zone around the target.
+  square: "77, 0, 16; 66, 7, 22; 77, 0, -16; 66, 7, -22" # Rectangular protection zone.
 
-target:
-  pos: "71, 1, 20; 71, 1, -20"
-  circle: "71, 0, 18; 71, 0, -18"
-  square: "77, 0, 16; 66, 7, 22; 77, 0, -16; 66, 7, -22"
-
-maps:
+# Map Templates: Coordinates for the master copies used to reset the game fields.
+maps: 
   rematch: "63, 15, 140; 98, -1, 185"
   winner: "25, 15, 140; 60, -1, 185"
   game: "-13, 15, 140; 22, -1, 185"
+
+# ===============================================================
+#  SPAWN & RESET POINTS
+# ===============================================================
+
+spawn-points:
+  # Respawn locations for teams. Coordinates refer to the lamp blocks, player is spawned above.
+  respawn: 
+    team-blue: "85, -1, 17, -180, 0; 57, -1, 17, -180, 0; 71, -1, 7, -180, 0"
+    team-red: "85, -1, -17; 57, -1, -17; 71, -1, -7"
+  # Locations of droppers that dispense snowballs. Requires a lamp block directly above.
+  snowball: 
+    team-blue: "71, 0, 4; 71, 1, 4"
+    team-red: "71, 0, -4; 71, 1, -4"
+  # Teleport destination for the winning player.
+  winner: "71.5, 11, 0.5" 
+  # Teleport destination for players who have been eliminated.
+  dead: 
+    team-blue: "71.5, 8, 47.5, -180, 0"
+    team-red: "71.5, 8, -46.5"
+  # Teleport locations for a rematch.
+  rematch: 
+    team-blue: "71.5, 2, 3.5"
+    team-red: "71.5, 2, -2.5"
+    # Defines the area where all barriers are cleared when a rematch starts.
+    barrier-box: "97, 2, 8; 63, 4, -8" 

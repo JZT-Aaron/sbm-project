@@ -101,6 +101,7 @@ public class TeamManager {
         teamChestplateMeta.addItemFlags(ItemFlag.HIDE_DYE);
         teamChestplate.setItemMeta(teamChestplateMeta);
         player.getInventory().setChestplate(teamChestplate);
+        player.updateInventory();
     }
     
     public static void setTeamChestPlate(Player player) {

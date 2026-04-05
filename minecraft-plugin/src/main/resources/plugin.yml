@@ -3,7 +3,7 @@ version: 1.1.0-SNAPSHOT
 name: SBM-Plugin
 author: Olvier Martin
 api-version: '1.21'
-description: A Minecraft plugin
+description: A Minecraft plugin about a Snowballmatch
 depend: [ProtocolLib]
 commands:
   alert:

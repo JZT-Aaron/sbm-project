@@ -1,7 +1,8 @@
 package de.dachente.sbm.utils;
 
 import de.dachente.sbm.main.Main;
-
+import de.dachente.sbm.managers.DemoManger;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,8 +41,13 @@ public class Repeat {
                 if(Game.isSnowing) {
                     run++;
                     if(run == 4) run = 0;
-                    for(Player all : Bukkit.getOnlinePlayers()) {
-                        if(run == 3 || (run != 0 && !movingPlayers.contains(all.getUniqueId()))) continue;
+                    for(UUID uuid : PlayerStats.getSnowPlayers()) {
+                        if(run == 3 || (run != 0 && !movingPlayers.contains(uuid))) continue;
+                        Player all = Bukkit.getPlayer(uuid);
+                        if(all == null) {
+                            PlayerStats.setOffline(uuid);
+                            continue;
+                        }
 
                         if(all.getLocation().getBlock().getLightFromSky() < 3) continue;
                         Location eyeLocation = all.getEyeLocation();

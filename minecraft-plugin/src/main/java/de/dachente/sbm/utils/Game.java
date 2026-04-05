@@ -167,7 +167,7 @@ public class Game {
                     }
                     if(isMatch) beginRound();
                     else {
-                        List<Location> poses = Main.parseList(config.getString("rematch-spawn.barrier-box"), Main.arena);
+                        List<Location> poses = Main.parseList(config.getString("spawn-points.rematch.barrier-box"), Main.arena);
                         replaceBocks(poses.get(0), poses.get(1), Material.BARRIER, Material.AIR);
 
                         Instant gameEndTimestamp = Instant.now().plus(ROUND_LENGHT, ChronoUnit.MINUTES);
@@ -274,7 +274,7 @@ public class Game {
         Game.updateTeamHearts();
         Game.setGameStatus(GameState.RUNNING_MATCH);
 
-        List<Location> poses = Main.parseList(config.getString("spawn-points.respawn-points.barrier"));
+        List<Location> poses = Main.parseList(config.getString("side-barriers"));
         replaceBocks(poses.get(0), poses.get(1), Material.BARRIER, Material.AIR);
     }
 
@@ -383,7 +383,7 @@ public class Game {
     }
 
     public static Location getRematchSpawnLocation(Player player) {
-        return Main.parseLocation(config.getString("rematch-spawn." + TeamManager.getTeam(player).getId()), Main.arena);
+        return Main.parseLocation(config.getString("spawn-points.rematch." + TeamManager.getTeam(player).getId()), Main.arena);
     }
 
     public static void startReMatch() {
@@ -448,6 +448,7 @@ public class Game {
         ItemStack joinParkour = new ItemBuilder(Material.DARK_OAK_SLAB).setLangNameDescriptionTag("join-parkour", uuid).setUnmovable().build();
         
         inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
+        updateSnowToogleItem(player);
         inv.setItem(2, joinParkour);
         updateJoinGameItem(player);
         player.updateInventory();
@@ -469,6 +470,19 @@ public class Game {
 
     public static void updateJoinGameItem(Player player) {
         player.getInventory().setItem(0, getStartClockItem(player));
+        player.updateInventory();
+    }
+
+    public static ItemStack getSnowToggleItem(Player player) {
+        boolean isSnowing = PlayerStats.getSnowPlayers().contains(player.getUniqueId());
+        Material material = isSnowing ? Material.POWDER_SNOW_BUCKET : Material.BUCKET;
+        return new ItemBuilder(material).setLangNameDescriptionTag("snow-toggle", player.getUniqueId()).setUnmovable().setDisabled().build();
+    }
+
+    public static void updateSnowToogleItem(Player player) {
+        ItemStack item = getSnowToggleItem(player);
+        player.getInventory().setItem(6, item);
+        player.setCooldown(item.getType(), 5);
         player.updateInventory();
     }
 
