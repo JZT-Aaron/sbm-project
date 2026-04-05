@@ -144,6 +144,49 @@ AI was used as a support tool for research, server management, and brainstorming
 
 ---
 
+## Web Demo (ToolJet)
+
+The management interface is built with **ToolJet**.
+
+### ToolJet Export
+I have included a ToolJet application export file in this repository:  `/demo-web-app/*.json`
+
+You can import this JSON file into your own ToolJet instance to get the pre-configured dashboard immediately.
+
+---
+
+## Technical Stack
+
+* **Frontend:** ToolJet Web-App
+* **Backend:** * **Python (FastAPI):** Handles the main API logic and Docker orchestration.
+* **Node.js (Mineflayer):** Used for advanced Minecraft bot interactions.
+
+---
+
+## Quickstart Guide
+
+Follow these steps to get the system up and running using Docker.
+
+### 1. Prerequisites
+Ensure you have **Docker** and **Docker Compose** installed on your Linux server.
+
+### 2. Configuration
+1. Clone this repository.
+2. Open the `docker-compose.yml` and replace the following placeholders with your own secure values:
+    * `<DB_PASSWORD>`
+    * `<SECRET_KEY_BASE>`
+    * `<LOCKBOX_MASTER_KEY>`
+    * `<YOUR_DOMAIN>` (e.g., `sbm.example.com`)
+
+### 3. Deployment
+Run the following command in the directory containing your `docker-compose.yml`:
+
+```bash
+docker compose up -d
+```
+
+---
+
 ## 🏗️ Building Progress
 * [✅] Core Snowball Mechanics
 * [✅] Redis Integration
