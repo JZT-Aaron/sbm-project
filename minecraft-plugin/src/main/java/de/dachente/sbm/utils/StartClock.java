@@ -46,8 +46,6 @@ public class StartClock {
         Bukkit.getScheduler().cancelTask(taskID);
     }
 
-    //TODO: Test if that Text System works.
-
     public static void start() {
         isTimerStarted = true;
 

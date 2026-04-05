@@ -24,6 +24,7 @@ public class SpectatorManager implements Listener {
 
     public static void removeSpectatorPlayers(Player player) {
         Map<String, String> spectatorPlayers = getSpectatorPlayers();
+        for(Player all : Bukkit.getOnlinePlayers()) all.showPlayer(Main.getPlugin(), player);
         spectatorPlayers.remove(player.getUniqueId().toString());
         GameStats.set(GameStat.SPECTATOR_PLAYERS, spectatorPlayers);
         ArmorStand armorStand = getArmorStand(getSpectatorPlayers().get(player.getUniqueId().toString()));
@@ -32,7 +33,6 @@ public class SpectatorManager implements Listener {
             return;
         }
         armorStand.remove();
-        for(Player all : Bukkit.getOnlinePlayers()) all.showPlayer(Main.getPlugin(), player);
     }
 
     public static Map<String, String> getSpectatorPlayers() {

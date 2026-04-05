@@ -63,6 +63,7 @@ public class Game {
 
         ItemStack leaveTeam = new ItemBuilder(Material.RED_BED).setLangNameDescriptionTag("leave-team", uuid).setUnmovable().build();
         player.getInventory().clear();
+        TeamManager.setTeamChestPlate(player);
         
         if(Game.state().equals(GameState.OPEN)) player.getInventory().setItem(8, leaveTeam);
         
@@ -75,7 +76,8 @@ public class Game {
         if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString())) {
             Team team = TeamManager.getTeam(player);
             TeamManager.setTeamChestPlate(player);
-            player.teleport(Main.parseLocation(Main.getPlugin().getConfig().getString("spawn-points.dead." + team.getId()), Main.arena));
+            if(Game.hasStarted()) player.teleport(Main.parseLocation(Main.getPlugin().getConfig().getString("spawn-points.dead." + team.getId()), Main.arena));
+            else player.teleport(team.getTeamSpawnLocation());
         } else {
             StatusManger.setPlayerStatus(Status.WATCHING, player);
             player.teleport(Main.arena.getSpawnLocation());  
@@ -223,8 +225,8 @@ public class Game {
             Player player = Bukkit.getPlayer(UUID.fromString(map.getKey()));
             if(player == null) {
                 Info.sendLangImportantInfo("left-player.game-start", "%team%", team.getChatColor() + team.getName());
-                addLeftPlayer(UUID.fromString(map.getKey()), 3);
-                return;
+                addLeftPlayer(UUID.fromString(map.getKey()), 6);
+                continue;
             }
             StatusManger.setPlayerStatus(Status.PLAYING, player);
             player.getInventory().clear();
@@ -327,13 +329,13 @@ public class Game {
         for(Player all : Main.arena.getPlayers()) {
             if(!TeamManager.getTeamsPlayer().containsKey(all.getUniqueId().toString())) continue;
             Team team = TeamManager.getTeam(all);
-            all.getInventory().clear();
-            TeamManager.setTeamChestPlate(all);
+            loadLobbyInv(all);
             all.setHealthScale(20);
             all.teleport(team.getTeamSpawnLocation());
+            StatusManger.setPlayerStatus(Status.WAITING, all);
             Info.sendLangInfo("team.team-join", all, "%team%", getText("team." + team.getId(), all.getUniqueId()));
         }
-        setLivingPlayers(new HashMap<>());
+        setLivingPlayers(new HashMap<>(TeamManager.getTeamsPlayer()));
         setTeamHearts(new HashMap<>());
         GameStats.set(GameStat.GAME_END_TIMESTAMP, GameStat.GAME_END_TIMESTAMP.getDefaultValue());
         Main.clearDroppedItems();
@@ -429,12 +431,13 @@ public class Game {
         ItemStack spyglass = new ItemBuilder(Material.SPYGLASS).setUnmovable().build();
 
 
-        player.getInventory().setHeldItemSlot(3);
+        player.getInventory().setHeldItemSlot(4);
         inv.setItem(8, backToLobby);
         inv.setItem(7, LanguageManager.getLanguageChangeItem(uuid));
+        updateSnowToogleItem(player);
         inv.setItem(0, joinTeam);
         inv.setItem(1, cameraViews);
-        inv.setItem(4, spyglass);
+        inv.setItem(3, spyglass);
         player.updateInventory();
     }
 
@@ -574,6 +577,10 @@ public class Game {
 
     public static boolean isRunning() {
         return (Game.state().equals(GameState.RUNNING_MATCH) || Game.state().equals(GameState.RUNNING_REMATCH));
+    }
+
+    public static boolean hasStarted() {
+        return isRunning() || state().equals(GameState.PAUSED);
     }
 
     public static void dropBonusSnowball(Team team, int amount) {

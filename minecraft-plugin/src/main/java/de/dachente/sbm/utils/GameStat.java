@@ -3,13 +3,13 @@ package de.dachente.sbm.utils;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import com.google.gson.reflect.TypeToken;
 
 import de.dachente.sbm.utils.enums.GameMap;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Language;
-import de.dachente.sbm.utils.enums.Status;
 import de.dachente.sbm.utils.enums.Team;
 
 public enum GameStat {
@@ -28,12 +28,12 @@ public enum GameStat {
 
     private final String redisKey;
     private final Type type;
-    private final Object defaultValue;
+    private final Supplier<Object> defaultSupplier;
 
-    GameStat(String redisKey, Type type, Object defaultValue) {
+    GameStat(String redisKey, Type type, Supplier<Object> defaultSupplier) {
         this.redisKey = redisKey;
         this.type = type;
-        this.defaultValue = defaultValue;
+        this.defaultSupplier = defaultSupplier;
     }
 
     public String getRedisKey() {
@@ -45,6 +45,6 @@ public enum GameStat {
     }
 
     public Object getDefaultValue() {
-        return defaultValue;
+        return defaultSupplier.get();
     }
 }

@@ -15,7 +15,7 @@ public class GameStats {
 
     @SuppressWarnings("unchecked")
     public static <T> T get(GameStat stat) {
-        return (T) values.getOrDefault(stat, stat.getDefaultValue());
+        return (T) values.computeIfAbsent(stat, s -> s.getDefaultValue());
     }
 
     public static void set(GameStat stat, Object value) {

@@ -6,18 +6,22 @@ import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.TeamManager;
 import de.dachente.sbm.utils.Game;
 import de.dachente.sbm.utils.ItemBuilder;
+import de.dachente.sbm.utils.PlayerStats;
 import de.dachente.sbm.utils.enums.GameState;
 import de.dachente.sbm.utils.enums.Server;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 public class InteractListener implements Listener {
 
@@ -26,6 +30,15 @@ public class InteractListener implements Listener {
     @EventHandler
     public void onInteractEvent(PlayerInteractEvent event) throws MalformedURLException {
         Player player = event.getPlayer();
+        if(event.getItem() == null && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+            if(player.hasPermission(config.getString("permission.sbm.allow.interact-blocks")) && player.getGameMode().equals(GameMode.CREATIVE)) return;
+            
+            List<Location> whitelist = Main.parseList(config.getString("block-click-whitelist"));
+            Location blockLoc = event.getClickedBlock().getLocation();
+            for(Location loc : whitelist) if(loc.getBlockX() == blockLoc.getBlockX() && loc.getBlockY() == blockLoc.getBlockY() && loc.getBlockZ() == blockLoc.getBlockZ()) return;
+            event.setCancelled(true);
+            return;
+        }
         if(event.getItem() == null) return;
         if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && Game.state().equals(GameState.PAUSED)) {
             event.setCancelled(true);
@@ -40,7 +53,9 @@ public class InteractListener implements Listener {
             if(event.getItem().getType().equals(Material.ENDER_PEARL)) player.setCooldown(Material.ENDER_PEARL, 0);
         }
         
-        if(!ItemBuilder.hasTagData(event.getItem())) return;
+        if(!ItemBuilder.hasTagData(event.getItem())) {
+            return;
+        }
 
         String id = ItemBuilder.getTagData(event.getItem());
 
@@ -87,6 +102,15 @@ public class InteractListener implements Listener {
 
         if(id.equalsIgnoreCase("leave-team")) {
             TeamManager.removePlayerTeam(player.getUniqueId().toString());
+            return;
+        }
+
+        if(id.equalsIgnoreCase("snow-toggle")) {
+            if(player.getCooldown(event.getItem().getType()) > 0) return;
+            if(PlayerStats.getSnowPlayers().contains(player.getUniqueId())) PlayerStats.removeSnowPlayer(player.getUniqueId());
+            else PlayerStats.addSnowPlayer(player.getUniqueId());
+            event.setCancelled(true);
+            Game.updateSnowToogleItem(player);
             return;
         }
     }

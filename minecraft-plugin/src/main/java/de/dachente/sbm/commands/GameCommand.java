@@ -88,7 +88,7 @@ public class GameCommand implements CommandExecutor {
         //Normal Reset
         if(args[0].equalsIgnoreCase("reset")) {
             Game.resetRound();
-            if(player != null) Info.sendInfo("Reset Complete", "§aDev-Cmd");
+            if(player != null) Info.sendInfo("Reset Complete", "§aDev-Cmd", player);
             else sender.sendMessage("§a[Info] Reset Complete");
             return true;
         }
@@ -146,8 +146,12 @@ public class GameCommand implements CommandExecutor {
 
         //End Game Early
         if(args[0].equalsIgnoreCase("end")) {
+            if(!Game.hasStarted()) {
+                Info.sendLangError("game.round-not-already", player, "%state%", getText("state.started", player.getUniqueId()));
+                return true;
+            }
             Game.endRound();
-            Info.sendInfo("Match Ended", "§aDev-Cmd");
+            Info.sendInfo("Match Ended", "§aDev-Cmd", player);
             return true;
         }
 
@@ -171,7 +175,7 @@ public class GameCommand implements CommandExecutor {
         //Dev-Cmd Complete Reset
         if(args[0].equalsIgnoreCase("hard-reset")) {
             Game.hardReset();
-            Info.sendInfo("Hard Reset Complete", "§aDev-Cmd");
+            Info.sendInfo("Hard Reset Complete", "§aDev-Cmd", player);
             return true;
         }
 

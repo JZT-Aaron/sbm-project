@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,9 @@ public class TeamTab implements TabCompleter {
             List<String> tab = new ArrayList<>();
             if(args[0].equalsIgnoreCase("remove")) {
                 for(String uuid : TeamManager.getTeamsPlayer().keySet()) {
-                    String name = Bukkit.getPlayer(UUID.fromString(uuid)).getName();
+                    Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+                    if(player == null) continue;
+                    String name = player.getName();
                     tab.add(name); 
                 }
                 return tab;

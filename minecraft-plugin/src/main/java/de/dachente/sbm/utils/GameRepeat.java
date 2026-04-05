@@ -22,11 +22,11 @@ public class GameRepeat {
             @Override
             public void run() {
                 if(Game.state().equals(GameState.PAUSED)) {
-                    for(Player all : Bukkit.getOnlinePlayers()) all.sendActionBar(Component.text(getText("state.paused", all.getUniqueId())));
+                    for(Player all : Main.arena.getPlayers()) all.sendActionBar(Component.text(getText("state.paused", all.getUniqueId())));
                     return;
                 }
                 if(Game.isRunning()) {
-                    for(Player all : Bukkit.getOnlinePlayers()) 
+                    for(Player all : Main.arena.getPlayers()) 
                         all.sendActionBar(Component.text("§9§l♥ " + (Game.getTeamHearts(Team.BLUE)/2) + " §7- §c§l♥ " + (Game.getTeamHearts(Team.RED)/2)));
                     
                     Long gameEndMilli = GameStats.get(GameStat.GAME_END_TIMESTAMP);
