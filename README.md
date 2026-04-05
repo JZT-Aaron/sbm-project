@@ -92,21 +92,42 @@ It is specifically designed for **hosted competitions**, meaning it’s built to
 * **Private Alerts:** `/alert private <receiver> <message...>`
 * **Fast Travel:** `/hub`, `/lobby`, `/spawn`, `/game-server`, `/event-server`
 
+## Hotbars
+
+### Default Items
+
+![Default Items](/pics/Default%20Inv.png)
+
+These items are available in every hotbar:
+
+1. **Language** Opens a menu to change your preferred language.
+
+2. **Toggle Snow** Since high particle counts can cause lag, you can use this to turn the snow effect off.
+
 ---
 
-## 🛠️ Technical & Fair Play Rules
+### Lobby Hotbar
 
-### Disconnections
+![Pic Lobby Hotbar](/pics/Lobby%20Inv.png)
 
-* **Proxy Hearts:** If a player leaves, their hearts are transferred to a placeholder so the team's total heart count remains accurate.
-* **Rejoining:** Players reclaim their hearts upon rejoining.
-* **Host Authority:** If a player is gone too long, the Host may **disqualify** them. Matches may be paused or restarted if team balance becomes unfair.
+1. **Game Server Join** This item either displays when the game server is joinable or acts as a direct button to join.
 
-### Disqualification
+2. **Parkour** Teleports you to the start of the parkour course.
 
-* **Cheats:** Use of external cheat systems or prohibited clients is strictly forbidden.
-* **Bugs:** All bugs must be reported. Exploiting bugs for an advantage results in disqualification.
-* **Decisions:** Hosts have the final say on all disqualifications based on the "spirit of the game."
+---
+
+### Game Server Hotbar
+
+![GameServerHotbarPic](/pics/Gameserver.png)
+
+1. **Participate** Click this to be automatically assigned to a team.
+
+2. **Overlooks** Opens a menu to pick one of three viewpoints and teleports you there.
+
+3. **Spyglass** A standard spyglass. Use it to observe other players.
+
+4. **Lobby** Teleports you back to the lobby.
+
 
 ---
 
@@ -116,7 +137,7 @@ I first started this project in 2023, but back then, the code was disorganized a
 
 I initially planned to build a web dashboard, but the old groundwork needed a complete rework. I ended up scaling the arena, adding new features, and implementing a multi-language system (moving from German to English).
 
-With the deadline approaching, the custom web app isn't quite ready. However, since all data is in **Redis**, I created a functional demo interface using **Tooljet**. In the future, I plan to release both a lightweight version and a fully integrated dashboard version.
+With the (personal) deadline approaching, the custom web app isn't quite ready. However, since all data is in **Redis**, I created a functional demo interface using **Tooljet**. In the future, I plan to release both a lightweight version and a fully integrated dashboard version.
 
 ## 🤖 Usage of AI
 AI was used as a support tool for research, server management, and brainstorming. No code was written directly by AI, though some logic was inspired by AI suggestions. It served as a technical collaborator, not a writer.

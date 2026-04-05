@@ -15,6 +15,10 @@ public class CommandListener implements Listener {
         String message = event.getMessage().toLowerCase();
 
         // When DEMO is TRUE
+        if(Main.isDemo && message.startsWith("/gamerule")) {
+            event.setCancelled(true);
+            Info.sendLangError("no-permission", event.getPlayer());     
+        }
         if(Main.isDemo && message.startsWith("/stop")) {
             event.setCancelled(true);
             DemoManger.closeServer();

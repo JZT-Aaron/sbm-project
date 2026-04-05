@@ -17,7 +17,6 @@ public class DemoManger {
     }
 
     public static void closeServer() {
-        Info.sendInfo("[DEBUG] " + "http://mc-manager-api:1320/delete-server/" + stackId);
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create("http://mc-manager-api:1320/delete-server/" + stackId))

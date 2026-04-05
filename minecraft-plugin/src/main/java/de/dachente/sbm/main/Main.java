@@ -46,7 +46,6 @@ import de.dachente.sbm.listeners.QuitListener;
 import de.dachente.sbm.listeners.SnowballFlyListener;
 import de.dachente.sbm.listeners.SnowballHitListener;
 import de.dachente.sbm.managers.BossBarManager;
-import de.dachente.sbm.managers.DemoManger;
 import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.StatusManger;
