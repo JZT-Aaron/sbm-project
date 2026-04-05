@@ -13,17 +13,16 @@ import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Team;
 
 public enum GameStat {
-    STATE("state", GameState.class, GameState.CLOSED),
-    TEAM_PLAYERS("team-players", new TypeToken<Map<String, Team>>(){}.getType(), new HashMap<>()),
-    LIVING_PLAYERS("living-players", new TypeToken<Map<String, Team>>(){}.getType(), new HashMap<>()),
-    TEAM_HEARTS("team-hearts", new TypeToken<Map<Team, Integer>>(){}.getType(), new HashMap<>()),
-    GAME_END_TIMESTAMP("game-end-timestamp", Long.class, null),
-    PLAYER_STATUS("player-status", new TypeToken<Map<String, Status>>(){}.getType(), new HashMap<>()),
-    PLAYER_LANGUAGE("player-language", new TypeToken<Map<String, Language>>(){}.getType(), new HashMap<>()),
-    LOADED_MAP("loaded-map", GameMap.class, GameMap.GAME),
-    LEFT_TEAM_PLAYERS("left-team-players", new TypeToken<Map<String, Game.HandoverContext>>(){}.getType(), new HashMap<>()),
-    NEXT_RESPAWN_POINT("next-respawn-point", new TypeToken<Map<Team, Integer>>(){}.getType(), new HashMap<>()),
-    SPECTATOR_PLAYERS("spectator-players", new TypeToken<Map<String, String>>(){}.getType(), new HashMap<>());
+    STATE("state", GameState.class, () -> GameState.CLOSED),
+    TEAM_PLAYERS("team-players", new TypeToken<Map<String, Team>>(){}.getType(), HashMap::new),
+    LIVING_PLAYERS("living-players", new TypeToken<Map<String, Team>>(){}.getType(), HashMap::new),
+    TEAM_HEARTS("team-hearts", new TypeToken<Map<Team, Integer>>(){}.getType(), HashMap::new),
+    GAME_END_TIMESTAMP("game-end-timestamp", Long.class, () ->null),
+    PLAYER_LANGUAGE("player-language", new TypeToken<Map<String, Language>>(){}.getType(), HashMap::new),
+    LOADED_MAP("loaded-map", GameMap.class, () -> GameMap.GAME),
+    LEFT_TEAM_PLAYERS("left-team-players", new TypeToken<Map<String, Game.HandoverContext>>(){}.getType(), HashMap::new),
+    NEXT_RESPAWN_POINT("next-respawn-point", new TypeToken<Map<Team, Integer>>(){}.getType(), HashMap::new),
+    SPECTATOR_PLAYERS("spectator-players", new TypeToken<Map<String, String>>(){}.getType(), HashMap::new);
     
 
     private final String redisKey;

@@ -25,13 +25,13 @@ import de.dachente.sbm.utils.PlayerStats;
 import de.dachente.sbm.utils.StartClock;
 import de.dachente.sbm.utils.enums.Language;
 import de.dachente.sbm.utils.enums.Server;
-import de.dachente.sbm.utils.enums.Status;
 import net.kyori.adventure.text.Component;
 
 public class LanguageManager {
 
     private static Map<UUID, Language> playerLanguages = new HashMap<>();
 
+    // Get Player Head for Globe
     public static ItemStack getLanguageChangeItem(UUID uuid) {
         String texture = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOThkYWExZTNlZDk0ZmYzZTMzZTFkNGM2ZTQzZjAyNGM0N2Q3OGE1N2JhNGQzOGU3NWU3YzkyNjQxMDYifX19";
         String url = "http://textures.minecraft.net/texture/98daa1e3ed94ff3e33e1d4c6e43f024c47d78a57ba4d38e75e7c9264106";
@@ -39,12 +39,14 @@ public class LanguageManager {
         return changeLanguage;
     }
 
+    // Load Language Files
     public static void loadLang() {
         for(Language lang : Language.values()) {
             lang.setFile(getLangFile(lang.getFileName()));
         }
     }
 
+    
     private static FileConfiguration getLangFile(String lang) {    
         String path = "lang/lang_" + lang + ".yml";
         File file = new File(Main.getPlugin().getDataFolder(), path);
@@ -56,6 +58,7 @@ public class LanguageManager {
         return YamlConfiguration.loadConfiguration(file);
     }
 
+    // Menu for Picking the Language
     public static void openLanguageMenu(Player player) {
         Language lang = playerLanguages.get(player.getUniqueId());
         int slots = ((Language.values().length + 8) / 9) * 9;
@@ -71,17 +74,19 @@ public class LanguageManager {
         player.openInventory(inv);
     }
 
+    // Add Player to a List where his Language is saved in RAM
     public static void addOnlineSnyc(UUID userUuid) {
         Language lang =  PlayerStats.getLanguageSync(userUuid);
         playerLanguages.put(userUuid, PlayerStats.getLanguageSync(userUuid));
         Main.getPlugin().getLogger().info("Added Player to Online Players:" + userUuid + " | " + lang);
-        playerLanguages.put(userUuid, PlayerStats.getLanguageSync(userUuid));
     }
 
+    // Remove Player from that List
     public static void removeOnline(UUID userUuid) {
         playerLanguages.remove(userUuid);
     }
 
+    // Change Language from Player an update everything accordingly
     public static void setLanguage(Player player, Language lang) {
         boolean hasBossbar = BossBarManager.containsPlayer(player);
         if(hasBossbar) BossBarManager.removePlayer(player);
@@ -102,12 +107,10 @@ public class LanguageManager {
         if(player.getWorld().equals(Main.lobby)) StartClock.updateSigns(player, false);
 
         if(cServer == Server.EVENT_SERVER) {
-            if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString())) return;
-            if(TeamManager.getTeamsPlayer().containsKey(player.getUniqueId().toString()) && StatusManger.getPlayerStatus(player).equals(Status.WAITING)) {
-                Game.loadLobbyInv(player);
-                return;
-            }
-        }    
+            if(Game.getLivingPlayers().containsKey(player.getUniqueId().toString()) && !Game.hasStarted()) Game.loadLobbyInv(player);
+            else Game.setGameServerHotbar(player);
+            return;
+        }
         Game.setServerHotbar(cServer, player);
         
     }
@@ -135,7 +138,7 @@ public class LanguageManager {
     public static String getItemName(String item, UUID uuid) {
         ConfigurationSection itemKey = getLanguage(uuid).getFile().getConfigurationSection("items." + item);
         String click = itemKey.getBoolean("no-click", false) ? "" : " §7§o" + getText("info.click", uuid);
-        return "§f§l" + itemKey.getString("name") + click;
+        return "§b§l" + itemKey.getString("name") + click;
     }
 
     public static String getMessagePrefix(String prefix, UUID uuid) {
