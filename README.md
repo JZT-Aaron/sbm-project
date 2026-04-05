@@ -119,7 +119,7 @@ I initially planned to build a web dashboard, but the old groundwork needed a co
 With the deadline approaching, the custom web app isn't quite ready. However, since all data is in **Redis**, I created a functional demo interface using **Tooljet**. In the future, I plan to release both a lightweight version and a fully integrated dashboard version.
 
 ## 🤖 Usage of AI
-AI was used as a support tool for research, server management, and brainstorming. No code was written directly by AI, though some logic was inspired by AI suggestions. It served as a technical collaborator, not a writer.
+AI was used as a support tool for research, server management, and brainstorming. No code was written directly by AI, though some logic was inspired by AI suggestions. It served as a technical collaborator, not a writer. P.S.: Since to limited time and experience some parts of the Web Demo App was directly programmed by AI.
 
 ---
 
