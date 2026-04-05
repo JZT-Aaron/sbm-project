@@ -38,5 +38,11 @@ public class QuitListener implements Listener {
 
         LanguageManager.removeOnline(player.getUniqueId());
         MutliLangSignManager.customSigns.remove(player.getUniqueId());
+        PlayerStats.setOffline(player.getUniqueId());
+
+        if(Main.isDemo && Bukkit.getOnlinePlayers().size() <= 1) {
+            Main.getPlugin().getLogger().info("Detected Empty Server: Closing in 15 Minutes");
+            DemoManger.setCloseTimestamp(Instant.now().plus(15, ChronoUnit.MINUTES));
+        } 
     }
 }

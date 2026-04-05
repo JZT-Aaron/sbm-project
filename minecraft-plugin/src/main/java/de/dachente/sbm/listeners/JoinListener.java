@@ -26,6 +26,10 @@ public class JoinListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        if(Main.isDemo && DemoManger.timestamp != null) {
+            Main.getPlugin().getLogger().info("Detectet Join: Closing is now undefined.");
+            DemoManger.setCloseTimestamp(null); 
+        } 
         Player player = event.getPlayer();
         String uuid = player.getUniqueId().toString();
         event.joinMessage(Component.empty());

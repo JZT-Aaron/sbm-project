@@ -1,5 +1,7 @@
 package de.dachente.sbm.main;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import de.dachente.sbm.listeners.AsyncPlayerPreLoginListener;
 import de.dachente.sbm.listeners.BellRingListener;
 import de.dachente.sbm.listeners.BlockBreakListener;
 import de.dachente.sbm.listeners.BlockRedstoneHandler;
+import de.dachente.sbm.listeners.CommandListener;
 import de.dachente.sbm.listeners.DamageByEntityListener;
 import de.dachente.sbm.listeners.DamageListener;
 import de.dachente.sbm.listeners.InteractListener;
@@ -43,6 +46,7 @@ import de.dachente.sbm.listeners.QuitListener;
 import de.dachente.sbm.listeners.SnowballFlyListener;
 import de.dachente.sbm.listeners.SnowballHitListener;
 import de.dachente.sbm.managers.BossBarManager;
+import de.dachente.sbm.managers.DemoManger;
 import de.dachente.sbm.managers.GateManager;
 import de.dachente.sbm.managers.LanguageManager;
 import de.dachente.sbm.managers.StatusManger;
@@ -79,6 +83,8 @@ public final class Main extends JavaPlugin {
     public static NamespacedKey NO_USE;
     public static NamespacedKey TAG_KEY;
 
+    public static boolean isDemo = false;
+
     private static BackendClient backendClient;
     private static RedisEventPublisher redisEventPublisher;
     private static RedisManager redisManager;
@@ -89,13 +95,16 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("Plugin is starting ...");
+        
+        isDemo = System.getenv("DEMO") != null && System.getenv("DEMO").equals("TRUE");
+        if(isDemo) getLogger().warning("This Plugin was started in DEMO MODE");
 
         plugin = this;
         saveDefaultConfig();
         for(Language lang : Language.values()) {
             saveResource("lang/lang_" + lang.getFileName() + ".yml", true);
         }
-        
+
         LanguageManager.loadLang();
         MutliLangSignManager.registerListener();
 
@@ -120,6 +129,7 @@ public final class Main extends JavaPlugin {
         registerEventInfoSigns();
 
         GameStats.init();
+        PlayerStats.initSnowList();
 
         Repeat.start();
         GameRepeat.start();
@@ -247,6 +257,8 @@ public final class Main extends JavaPlugin {
         pluginManager.registerEvents(new JoinListener(), this);
         pluginManager.registerEvents(new AsyncPlayerPreLoginListener(), this);
         pluginManager.registerEvents(new QuitListener(), this);
+
+        if(isDemo) pluginManager.registerEvents(new CommandListener(), this);
     }
 
     private void registerTeamGates() {
@@ -328,7 +340,7 @@ public final class Main extends JavaPlugin {
 
     public static List<Chunk> getForceLoadChunks() {
         List<Chunk> chunksList = new ArrayList<>();
-        String[] chunks = Main.getPlugin().getConfig().getString("spawn-points.forceload-chunks").split(";");
+        String[] chunks = Main.getPlugin().getConfig().getString("forceload-chunks").split(";");
         for(String chunk : chunks) {
             String[] cords = chunk.split(",");
             chunksList.add(Main.arena.getChunkAt(Integer.parseInt(cords[0]), Integer.parseInt(cords[1])));

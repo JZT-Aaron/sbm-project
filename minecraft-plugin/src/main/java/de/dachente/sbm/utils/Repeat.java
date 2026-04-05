@@ -15,10 +15,23 @@ import org.bukkit.util.Vector;
 public class Repeat {
 
     public static int taskID;
+    public static int taskID2 = -1;
 
     public static List<UUID> movingPlayers = new ArrayList<>();
 
     public static void start() {
+        if(Main.isDemo) {
+            taskID2 = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
+                @Override
+                public void run() {
+                    if(Main.isDemo && DemoManger.timestamp != null && DemoManger.timestamp.isBefore(Instant.now()) && Bukkit.getOnlinePlayers().size() <= 0) {
+                        DemoManger.closeServer();
+                    }
+                } 
+            }, 0, 1200);
+
+        }
+        
         taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.getPlugin(), new Runnable() {
             int run = 0;
 
@@ -57,6 +70,10 @@ public class Repeat {
 
     public static void stop() {
         Bukkit.getScheduler().cancelTask(taskID);
+        if(taskID2 != -1) {
+            Bukkit.getScheduler().cancelTask(taskID2);
+            taskID2 = -1;
+        } 
     }
 
 }
