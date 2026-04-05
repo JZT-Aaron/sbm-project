@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sql_admin
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: data
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    command: redis-server --requirepass redis_password
+    volumes:
+      - ./redis_data:/data
+
+  minecraft:
+    image: itzg/minecraft-server
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    ports:
+      - "25565:25565"
+    environment:
+      EULA: "TRUE"
+      TYPE: "PAPER"
+      VERSION: "1.21.11"
+      MEMORY: "5G"
+      ONLINE_MODE: "TRUE"
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: "RCON_PASSWORD"
+      UID: 1001
+      GID: 1001
+      SQL_HOST: db
+      SQL_PORT: 5432
+      SQL_USER: sql_admin
+      SQL_PASSWORD: postgres_password
+      SQL_DB: data
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_password 
+    volumes:
+      - /yourfolder-of-choice/sbm-server:/data
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:

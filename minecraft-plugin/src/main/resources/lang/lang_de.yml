@@ -40,8 +40,8 @@ title:
     title: "%sec%"
     subtitle: "Seid Bereit"
   player-won:
-    title: "§6§l§n%player% §7§lhat gewonnen"
-    subtitle: ""
+    title: "§6§l§n%player%"
+    subtitle: "§7§lhat gewonnen"
   rematch:
     title: "§c§lUnentschieden"
     subtitle: "Karten Änderung."
@@ -193,6 +193,9 @@ items:
   open-change-language:
     name: "Sprache ändern"
     description: "Klicke, um deine Sprache auszuwählen"
+  snow-toggle:
+    name: "Schneefall an/aus"
+    description: "Bestätige, um den Schneefall zu aktivieren oder zu deaktivieren."
 
 menu:
   change-lang:

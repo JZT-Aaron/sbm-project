@@ -11,21 +11,57 @@ The **Snowballmatch Plugin (SBM)** is inspired by a classic game played in schoo
 
 It is specifically designed for **hosted competitions**, meaning it’s built to be managed by a live host or moderator rather than running on a 24/7 automated loop. This makes it the perfect tool for organized community events and tournaments.
 
-## 🚀 Quick Setup
 
-The easiest way to get SBM running is via Docker.
+## 📖 Quick Start Guide
 
-1.  Locate the `docker-compose.yml` file in the project root.
-2.  Run the following command in your terminal:
+### 📋 Prerequisites
+
+* **Docker** and **Docker Compose** must be installed on your system.
+* The **"Essential" folder** containing the worlds and plugins must be ready.
+
+### Phase 1: Environment Setup (Docker)
+1.  **Modify Configuration:** Open the `docker-compose.yml` file in the root directory.
+2.  **Security Check:** Locate the environment variables for your database and RCON. Replace the default passwords with secure, unique strings.
+3.  **Deployment:** Open your terminal in the project folder and run:
     ```bash
     docker-compose up -d
     ```
-3.  Everything should be set up automatically.
-4.  **Important:** Please replace the default passwords in the file before deploying to ensure your server's security.
+    *This command starts the Minecraft server and the PostgreSQL database in the background.*
+
+### Phase 2: Manual File Installation
+1.  **Download Essentials:** Get the "Essential" folder containing the worlds and required plugins.
+2.  **World Setup:** Move the folders `SBM-Lobby` and `SBM-Arena` directly into your Minecraft server's root directory.
+3.  **Plugin Setup:** Place the `SBM-Plugin.jar` and `ProtocolLib.jar` into the `/plugins` folder.
+
+### Phase 3: Server Configuration
+1.  **Define Primary World:** Open `server.properties` and update the following line:
+    ```properties
+    level-name=SBM-Lobby
+    ```
+    *(Note: The SBM-Plugin will handle loading the `SBM-Arena` world automatically.)*
+2.  **Initial Boot:** Restart the Minecraft server to initialize the plugin and generate the configuration files.
+
+### Phase 4: Localization and Settings
+* **Main Settings:** Edit `/plugins/SBM-Plugin/config.yml` to adjust core features.
+* **Translations:** Navigate to the `/lang/` folder. Use `lang_en.yml` (English) or `lang_de.yml` (German) to modify in-game messages.
+
+---
+
+### 💻 Hardware Requirements
+
+| Component | Minimum | Recommended |
+| :--- | :--- | :--- |
+| **RAM (Memory)** | 4 GB | 8 GB |
+| **CPU** | 2 Cores (Modern) | 4 Cores (High Clock Speed) |
+| **Disk Type** | HDD | SSD (Crucial for World Loading) |
+
+* **Memory Usage:** Minecraft and the PostgreSQL database share resources. 8 GB of RAM allows the operating system and the server to run without swapping data to the disk.
+* **Storage Speed:** An SSD is highly recommended. It significantly reduces "stuttering" when players join or move between the Lobby and the Arena.
 
 ## ⌨️ Commands
 
 ### ⏱️ Round Management
+
 | Syntax | Description |
 | :--- | :--- |
 | `/game <start\|pause\|resume>` | Controls the flow of the match. |
@@ -33,6 +69,7 @@ The easiest way to get SBM running is via Docker.
 | `/game gate [<team>]` | Locks or unlocks the team gates. |
 
 ### ❄️ Game Events & Server
+
 | Syntax | Description |
 | :--- | :--- |
 | `/game bonus-snowball <team> [<amount>]` | Manually drops snowballs via the team's dropper. |
@@ -41,6 +78,7 @@ The easiest way to get SBM running is via Docker.
 | `/game open timer <start\|stop>` | Controls the countdown for the planned opening. |
 
 ### 👥 Team & Map Management
+
 | Syntax | Description |
 | :--- | :--- |
 | `/team add <player> [<team>]` | Adds a player to a team (auto-assigns if empty). |
@@ -49,6 +87,7 @@ The easiest way to get SBM running is via Docker.
 | `/map update` | Refreshes the build area behind the arena. |
 
 ### 📢 Alerts & Navigation
+
 * **Global Alerts:** `/alert <normal\|important> <message...>`
 * **Private Alerts:** `/alert private <receiver> <message...>`
 * **Fast Travel:** `/hub`, `/lobby`, `/spawn`, `/game-server`, `/event-server`
@@ -58,11 +97,13 @@ The easiest way to get SBM running is via Docker.
 ## 🛠️ Technical & Fair Play Rules
 
 ### Disconnections
+
 * **Proxy Hearts:** If a player leaves, their hearts are transferred to a placeholder so the team's total heart count remains accurate.
 * **Rejoining:** Players reclaim their hearts upon rejoining.
 * **Host Authority:** If a player is gone too long, the Host may **disqualify** them. Matches may be paused or restarted if team balance becomes unfair.
 
 ### Disqualification
+
 * **Cheats:** Use of external cheat systems or prohibited clients is strictly forbidden.
 * **Bugs:** All bugs must be reported. Exploiting bugs for an advantage results in disqualification.
 * **Decisions:** Hosts have the final say on all disqualifications based on the "spirit of the game."
@@ -70,6 +111,7 @@ The easiest way to get SBM running is via Docker.
 ---
 
 ## ❤️ About the Development
+
 I first started this project in 2023, but back then, the code was disorganized and I didn't have the time to finish it. Thanks to HackClub's **Flavortown**, I rediscovered it. 
 
 I initially planned to build a web dashboard, but the old groundwork needed a complete rework. I ended up scaling the arena, adding new features, and implementing a multi-language system (moving from German to English).
