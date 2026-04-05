@@ -623,38 +623,38 @@ public class Game {
         GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
     }
 
-    public static void addLeftPlayer(Player player) {
-        addLeftPlayer(player.getUniqueId(), player.getHealthScale());
+    public static boolean addLeftPlayer(Player player) {
+        return addLeftPlayer(player.getUniqueId(), player.getHealthScale());
     }
 
-    public static void addLeftPlayer(UUID playerUUID, double playerHearth) {
+    public static boolean addLeftPlayer(UUID playerUUID, double playerHearth) {
         Player proxyPlayer = pickProxyPlayer(TeamManager.getTeam(playerUUID.toString()));
-
-        Info.sendInfo("ProxyPlayer: " + proxyPlayer);
-
         String uuid = null;
         Integer proxyHearts = 0;
-        if(proxyPlayer == null) pause();
+
+        if(proxyPlayer == null || isProxyPlayer(playerUUID.toString())) pause();
         else {
+            Main.getPlugin().getLogger().info("ProxyPlayer for " + playerUUID + " determined: " + proxyPlayer.getName() + " | " + proxyPlayer.getUniqueId().toString());
             uuid = proxyPlayer.getUniqueId().toString();
             proxyHearts = (int) proxyPlayer.getHealthScale();
         }
 
-        Map<String, HandoverContext> leftPlayersMap = new HashMap<>();
+        Map<String, HandoverContext> leftPlayersMap = getLeftPlayersMap();
         HandoverContext handoverContext = new HandoverContext(uuid, (int) playerHearth, proxyHearts);
 
         leftPlayersMap.put(playerUUID.toString(), handoverContext);
         GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
 
-        if(proxyPlayer == null) return;
+        if(proxyPlayer == null) return false;
 
         double newProxyHearts = proxyPlayer.getHealthScale()+playerHearth;
 
         proxyPlayer.setHealthScale(newProxyHearts);
+        return true;
     }
 
     public static boolean isProxyPlayer(String uuid) {
-        for(Entry<String, HandoverContext> entry : getLeftPlayersMap().entrySet()) if(entry.getValue().proxyUuid.equals(uuid)) return true;
+        for(Entry<String, HandoverContext> entry : getLeftPlayersMap().entrySet()) if(entry.getValue() != null && entry.getValue().proxyUuid.equals(uuid)) return true;
         return false;
     }
 
@@ -685,6 +685,12 @@ public class Game {
         GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayersMap);
     }
 
+    public static void setHandoverContext(UUID uuid, HandoverContext handoverContext) {
+        Map<String, HandoverContext> leftPlayers = getLeftPlayersMap();
+        leftPlayers.put(uuid.toString(), handoverContext);
+        GameStats.set(GameStat.LEFT_TEAM_PLAYERS, leftPlayers);
+    }
+
     public static Map<String, HandoverContext> getLeftPlayersMap() {
         return GameStats.get(GameStat.LEFT_TEAM_PLAYERS);
     }
@@ -702,7 +708,7 @@ public class Game {
     }
 
     public static List<Location> getRespawnPoints(Team team) {
-        return Main.parseList(config.getString("spawn-points.respawn-points." + team.getId()));
+        return Main.parseList(config.getString("spawn-points.respawn." + team.getId()));
     }
 
     public static void setNewTeamRespawnPoint(Team team) {

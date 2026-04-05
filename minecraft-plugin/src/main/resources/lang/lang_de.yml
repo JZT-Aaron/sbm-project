@@ -144,7 +144,8 @@ info:
     start: "Es steht unentschieden! Es gibt ein Entscheidungsspiel."
     tutorial: "Versucht euch gegenseitig  von Plattform zu werfen!"
   left-player:
-    add: "Team %team% hat einen neuen Offline-Spieler. Seine Herzen wurden einem Ersatzspieler zugewiesen."
+    add: "Das Team %team% hat einen neuen Offline-Spieler. Seine Herzen wurden einem Ersatzspieler zugewiesen."
+    none: "Das Team %team% hat unzureichenden Spieler aufgrund eines neuen Offline-Spielers."
     game-start: "Das Team %team% hat §oeinen §7Offline-Spieler. Seine Herzen wurde einem Ersatzspieler zugewiesen."
   paused: "Das Spiel wurde pausiert, die Admins werden versuche diese Lage zu lösen."
     

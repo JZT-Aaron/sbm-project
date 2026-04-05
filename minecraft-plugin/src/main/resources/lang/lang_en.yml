@@ -145,6 +145,7 @@ info:
     tutorial: "Try to knock each other off the platform!"
   left-player:
     add: "Team %team% has a new offline player. His hearts have been assigned to a proxy player."
+    none: "The team %team% has insufficient players due to a new offline player."
     game-start: "Team %team% has one offline player. His hearts have been assigned to a substitute player."
   paused: "The game has been paused, the admins will try to resolve this situation."
     
